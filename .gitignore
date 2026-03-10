@@ -8,3 +8,7 @@ build/
 .ruff_cache/
 uv.lock
 .env
+
+.hive-mind
+.claude-flow/agents.json
+.claude-flow/hive-mind/state.json
