@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-03-10T16:28:24.437Z",
+  "plugins": {
+    "@claude-flow/plugin-code-intelligence": {
+      "name": "@claude-flow/plugin-code-intelligence",
+      "version": "3.0.0-alpha.1",
+      "installedAt": "2026-03-10T16:27:44.457Z",
+      "enabled": true,
+      "source": "npm",
+      "path": "/Users/montes/Library/Mobile Documents/com~apple~CloudDocs/Projects/AI_Projects/autopilot-cli/.claude-flow/plugins/node_modules/@claude-flow/plugin-code-intelligence",
+      "commands": [],
+      "hooks": []
+    },
+    "@claude-flow/plugin-neural-coordination": {
+      "name": "@claude-flow/plugin-neural-coordination",
+      "version": "3.0.0-alpha.1",
+      "installedAt": "2026-03-10T16:28:24.437Z",
+      "enabled": true,
+      "source": "npm",
+      "path": "/Users/montes/Library/Mobile Documents/com~apple~CloudDocs/Projects/AI_Projects/autopilot-cli/.claude-flow/plugins/node_modules/@claude-flow/plugin-neural-coordination",
+      "commands": [],
+      "hooks": []
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@claude-flow/plugin-code-intelligence": "file:tmp/package/claude-flow-plugin-code-intelligence-3.0.0-alpha.1.tgz",
+    "@claude-flow/plugin-neural-coordination": "^3.0.0-alpha.1"
+  }
+}

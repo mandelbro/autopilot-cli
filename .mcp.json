@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "graphiti-memory": {
+      "type": "sse",
+      "url": "http://127.0.0.1:3300/servers/default/sse"
+    },
+    "ruflo": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "ruflo@latest",
+        "mcp",
+        "start"
+      ],
+      "env": {}
+    }
+  }
+}
