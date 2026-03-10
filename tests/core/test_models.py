@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
+import pytest
+
 from autopilot.core.models import (
     AgentName,
     AgentResult,
@@ -63,11 +65,16 @@ class TestDispatch:
 
     def test_frozen(self) -> None:
         d = Dispatch(agent="test", action="test")
-        try:
+        with pytest.raises(AttributeError):
             d.agent = "other"  # type: ignore[misc]
-            raise AssertionError("Should be frozen")
-        except AttributeError:
-            pass
+
+    def test_empty_agent_raises(self) -> None:
+        with pytest.raises(ValueError, match="agent must not be empty"):
+            Dispatch(agent="", action="do something")
+
+    def test_empty_action_raises(self) -> None:
+        with pytest.raises(ValueError, match="action must not be empty"):
+            Dispatch(agent="test-agent", action="")
 
 
 class TestDispatchPlan:
@@ -97,6 +104,24 @@ class TestDispatchPlan:
         raw = json.dumps({"dispatches": [{"agent": "a", "action": "b"}]})
         plan = DispatchPlan.from_json(raw)
         assert plan.dispatches[0].project_name == ""
+
+    def test_from_json_invalid_json(self) -> None:
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            DispatchPlan.from_json("not json")
+
+    def test_from_json_non_dict(self) -> None:
+        with pytest.raises(ValueError, match="must be a mapping"):
+            DispatchPlan.from_json("[1, 2]")
+
+    def test_from_json_missing_agent_key(self) -> None:
+        raw = json.dumps({"dispatches": [{"action": "do"}]})
+        with pytest.raises(ValueError, match="missing required"):
+            DispatchPlan.from_json(raw)
+
+    def test_from_json_non_dict_entry(self) -> None:
+        raw = json.dumps({"dispatches": ["not a dict"]})
+        with pytest.raises(ValueError, match="must be a mapping"):
+            DispatchPlan.from_json(raw)
 
 
 class TestAgentResult:
@@ -134,6 +159,15 @@ class TestSession:
         assert s.type == SessionType.DAEMON
         assert s.pid == 1234
 
+    def test_default_started_at_is_utc(self) -> None:
+        s = Session(
+            id="s-utc",
+            project="test",
+            type=SessionType.MANUAL,
+            status=SessionStatus.RUNNING,
+        )
+        assert s.started_at.tzinfo is not None
+
     def test_json_round_trip(self) -> None:
         now = datetime(2026, 3, 10, 12, 0, 0)
         original = Session(
@@ -156,6 +190,29 @@ class TestSession:
         assert restored.status == SessionStatus.COMPLETED
         assert restored.agent_name == "project-leader"
         assert restored.metadata == {"key": "value"}
+
+    def test_from_json_invalid_json(self) -> None:
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            Session.from_json("not json")
+
+    def test_from_json_non_dict(self) -> None:
+        with pytest.raises(ValueError, match="must be a mapping"):
+            Session.from_json("[1]")
+
+    def test_from_json_missing_required(self) -> None:
+        with pytest.raises(ValueError, match="missing required"):
+            Session.from_json(json.dumps({"id": "s-1"}))
+
+    def test_from_json_invalid_enum(self) -> None:
+        raw = json.dumps({
+            "id": "s-1",
+            "project": "p",
+            "type": "invalid_type",
+            "status": "running",
+            "started_at": "2026-01-01T00:00:00",
+        })
+        with pytest.raises(ValueError, match="Invalid session data"):
+            Session.from_json(raw)
 
 
 class TestCycleResult:
@@ -246,3 +303,7 @@ class TestEnforcementReport:
         data = json.loads(raw)
         assert data["project_id"] == "p-001"
         assert data["total_violations"] == 0
+
+    def test_default_collected_at_is_utc(self) -> None:
+        report = EnforcementReport(project_id="p-001")
+        assert report.collected_at.tzinfo is not None

@@ -32,6 +32,11 @@ class TestProjectConfig:
         with pytest.raises(ValidationError):
             ProjectConfig(name="test", type="ruby")  # type: ignore[arg-type]
 
+    def test_frozen(self) -> None:
+        cfg = ProjectConfig(name="test")
+        with pytest.raises(ValidationError):
+            cfg.name = "other"  # type: ignore[misc]
+
 
 class TestSchedulerConfig:
     def test_defaults(self) -> None:
@@ -43,6 +48,14 @@ class TestSchedulerConfig:
         assert cfg.consecutive_timeout_limit == 2
         assert cfg.agent_timeouts == {}
 
+    def test_rejects_zero_interval(self) -> None:
+        with pytest.raises(ValidationError, match="interval_seconds"):
+            SchedulerConfig(interval_seconds=0)
+
+    def test_rejects_negative_timeout(self) -> None:
+        with pytest.raises(ValidationError, match="agent_timeout_seconds"):
+            SchedulerConfig(agent_timeout_seconds=-1)
+
 
 class TestUsageLimitsConfig:
     def test_defaults(self) -> None:
@@ -51,6 +64,10 @@ class TestUsageLimitsConfig:
         assert cfg.weekly_cycle_limit == 1400
         assert cfg.max_agent_invocations_per_cycle == 40
 
+    def test_rejects_zero_limit(self) -> None:
+        with pytest.raises(ValidationError, match="daily_cycle_limit"):
+            UsageLimitsConfig(daily_cycle_limit=0)
+
 
 class TestAgentsConfig:
     def test_default_roles(self) -> None:
@@ -58,6 +75,10 @@ class TestAgentsConfig:
         assert len(cfg.roles) == 4
         assert "project-leader" in cfg.roles
         assert cfg.max_concurrent == 3
+
+    def test_rejects_zero_max_concurrent(self) -> None:
+        with pytest.raises(ValidationError, match="max_concurrent"):
+            AgentsConfig(max_concurrent=0)
 
 
 class TestEnforcementConfig:
@@ -74,6 +95,10 @@ class TestSafetyConfig:
         assert cfg.auto_merge is True
         assert cfg.require_tests is True
         assert cfg.max_files_per_commit == 100
+
+    def test_rejects_zero_max_files(self) -> None:
+        with pytest.raises(ValidationError, match="max_files_per_commit"):
+            SafetyConfig(max_files_per_commit=0)
 
 
 class TestGitConfig:
@@ -92,6 +117,11 @@ class TestAutopilotConfig:
         cfg = AutopilotConfig(project=ProjectConfig(name="myproject"))
         assert cfg.project.name == "myproject"
         assert cfg.scheduler.strategy == "interval"
+
+    def test_frozen(self) -> None:
+        cfg = AutopilotConfig(project=ProjectConfig(name="test"))
+        with pytest.raises(ValidationError):
+            cfg.project = ProjectConfig(name="other")  # type: ignore[misc]
 
     def test_yaml_round_trip(self, tmp_path: Path) -> None:
         original = AutopilotConfig(
@@ -119,6 +149,28 @@ class TestAutopilotConfig:
 
         assert loaded.agents.max_concurrent == 5
         assert loaded.git.branch_strategy == "per-task"
+
+    def test_from_yaml_missing_file(self, tmp_path: Path) -> None:
+        with pytest.raises(FileNotFoundError, match="not found"):
+            AutopilotConfig.from_yaml(tmp_path / "nonexistent.yaml")
+
+    def test_from_yaml_empty_file(self, tmp_path: Path) -> None:
+        empty = tmp_path / "empty.yaml"
+        empty.write_text("")
+        with pytest.raises(ValueError, match="empty"):
+            AutopilotConfig.from_yaml(empty)
+
+    def test_from_yaml_invalid_yaml(self, tmp_path: Path) -> None:
+        bad = tmp_path / "bad.yaml"
+        bad.write_text(":\n  :\n  - [invalid")
+        with pytest.raises(ValueError, match="Invalid YAML"):
+            AutopilotConfig.from_yaml(bad)
+
+    def test_from_yaml_non_dict(self, tmp_path: Path) -> None:
+        bad = tmp_path / "list.yaml"
+        bad.write_text("- item1\n- item2\n")
+        with pytest.raises(ValueError, match="YAML mapping"):
+            AutopilotConfig.from_yaml(bad)
 
     def test_merge_project_overrides_global(self, tmp_path: Path) -> None:
         global_path = tmp_path / "global.yaml"
@@ -150,6 +202,24 @@ class TestAutopilotConfig:
 
         merged = AutopilotConfig.merge(tmp_path / "nonexistent.yaml", project_path)
         assert merged.project.name == "solo"
+
+    def test_merge_invalid_yaml_in_global(self, tmp_path: Path) -> None:
+        global_path = tmp_path / "global.yaml"
+        global_path.write_text(":\n  [invalid")
+        project_path = tmp_path / "project.yaml"
+        project_path.write_text("project:\n  name: test\n")
+
+        with pytest.raises(ValueError, match="global config"):
+            AutopilotConfig.merge(global_path, project_path)
+
+    def test_merge_non_dict_yaml(self, tmp_path: Path) -> None:
+        global_path = tmp_path / "global.yaml"
+        global_path.write_text("- a list\n")
+        project_path = tmp_path / "project.yaml"
+        project_path.write_text("project:\n  name: test\n")
+
+        with pytest.raises(ValueError, match="YAML mapping"):
+            AutopilotConfig.merge(global_path, project_path)
 
     def test_invalid_values_raise_validation_error(self) -> None:
         with pytest.raises(ValidationError):
