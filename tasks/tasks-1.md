@@ -160,7 +160,7 @@
 
 - **Title**: Shared utilities -- subprocess and process management
 - **File**: src/autopilot/utils/subprocess.py, src/autopilot/utils/process.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want reliable subprocess and process management utilities, so that Claude CLI invocations and daemon processes are handled safely.
@@ -203,7 +203,7 @@
 
 - **Title**: Shared utilities -- sanitizer, paths, git
 - **File**: src/autopilot/utils/sanitizer.py, src/autopilot/utils/paths.py, src/autopilot/utils/git.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a developer, I want shared path resolution, secret redaction, and git operation utilities, so that common operations are consistent and secure across the codebase.
