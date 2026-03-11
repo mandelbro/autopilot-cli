@@ -81,10 +81,10 @@ class TestNoArgsEntersRepl:
 
 
 class TestStubCommands:
-    def test_init_stub(self) -> None:
-        result = runner.invoke(app, ["init"])
+    def test_init_help(self) -> None:
+        result = runner.invoke(app, ["init", "--help"])
         assert result.exit_code == 0
-        assert "not yet implemented" in result.output.lower() or "init" in result.output.lower()
+        assert "init" in result.output.lower()
 
     def test_watch_stub(self) -> None:
         result = runner.invoke(app, ["watch"])

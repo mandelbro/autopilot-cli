@@ -9,6 +9,7 @@ from __future__ import annotations
 import typer
 
 from autopilot import __version__
+from autopilot.cli.project import project_app
 
 app = typer.Typer(
     name="autopilot",
@@ -19,7 +20,6 @@ app = typer.Typer(
 
 # -- Subcommand groups --------------------------------------------------------
 
-project_app = typer.Typer(name="project", help="Project lifecycle management.")
 task_app = typer.Typer(name="task", help="Task management and sprint planning.")
 session_app = typer.Typer(name="session", help="Session lifecycle management.")
 plan_app = typer.Typer(name="plan", help="Dispatch planning and review.")
@@ -70,14 +70,33 @@ def main(
 
 @app.command()
 def init(
-    name: str = typer.Option("", "--name", "-n", help="Project name."),
+    name: str = typer.Option("", "--name", "-n", prompt="Project name", help="Project name."),
     project_type: str = typer.Option(
-        "python", "--type", "-t", help="Project type (python/typescript/hybrid)."
+        "python",
+        "--type",
+        "-t",
+        prompt="Project type (python/typescript/hybrid)",
+        help="Project type.",
     ),
     root: str = typer.Option(".", "--root", "-r", help="Project root directory."),
 ) -> None:
     """Initialize a new autopilot project."""
-    typer.echo(f"Not yet implemented: init --name={name} --type={project_type} --root={root}")
+    from pathlib import Path
+
+    from autopilot.cli.display import console, notification
+    from autopilot.core.project import initialize_project
+
+    root_path = Path(root).resolve()
+    try:
+        result = initialize_project(name=name, project_type=project_type, root_path=root_path)
+    except (FileExistsError, ValueError) as exc:
+        notification("error", str(exc))
+        raise typer.Exit(code=1) from exc
+
+    notification("success", f"Project '{result.project_name}' initialized!")
+    console.print()
+    for i, step in enumerate(result.next_steps, 1):
+        console.print(f"  {i}. {step}")
 
 
 @app.command()
@@ -105,12 +124,6 @@ def migrate() -> None:
 
 
 # -- Stub subcommands for Phase 2+ -------------------------------------------
-
-
-@project_app.command("list")
-def project_list() -> None:
-    """List all registered projects."""
-    typer.echo("Not yet implemented: project list")
 
 
 @project_app.command("show")
