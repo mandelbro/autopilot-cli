@@ -55,8 +55,7 @@ class TestTables:
             tables = {
                 row[0]
                 for row in conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table' "
-                    "AND name NOT LIKE 'sqlite_%'"
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
                 ).fetchall()
             }
             expected = {
@@ -79,8 +78,7 @@ class TestTables:
             indices = {
                 row[0]
                 for row in conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='index' "
-                    "AND name NOT LIKE 'sqlite_%'"
+                    "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
                 ).fetchall()
             }
             expected = {
@@ -99,9 +97,7 @@ class TestTables:
 class TestInsertProject:
     def test_insert_and_query(self, tmp_path: Path) -> None:
         db = Database(tmp_path / "test.db")
-        db.insert_project(
-            id="proj-1", name="test", path="/tmp/test", type="python"
-        )
+        db.insert_project(id="proj-1", name="test", path="/tmp/test", type="python")
         conn = db.get_connection()
         try:
             row = conn.execute("SELECT * FROM projects WHERE id = ?", ("proj-1",)).fetchone()
@@ -175,11 +171,15 @@ class TestInsertDispatch:
         db = Database(tmp_path / "test.db")
         db.insert_project(id="proj-1", name="test", path="/tmp", type="python")
         db.insert_cycle(
-            id="cyc-1", project_id="proj-1", status="COMPLETED",
+            id="cyc-1",
+            project_id="proj-1",
+            status="COMPLETED",
             started_at="2024-01-01T00:00:00Z",
         )
         db.insert_dispatch(
-            cycle_id="cyc-1", agent="engineering-manager", status="success",
+            cycle_id="cyc-1",
+            agent="engineering-manager",
+            status="success",
         )
         conn = db.get_connection()
         try:

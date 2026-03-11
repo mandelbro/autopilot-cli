@@ -217,8 +217,16 @@ class Database:
             "dispatches_planned, dispatches_succeeded, dispatches_failed, duration_seconds) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                id, project_id, session_id, status, started_at, ended_at,
-                dispatches_planned, dispatches_succeeded, dispatches_failed, duration_seconds,
+                id,
+                project_id,
+                session_id,
+                status,
+                started_at,
+                ended_at,
+                dispatches_planned,
+                dispatches_succeeded,
+                dispatches_failed,
+                duration_seconds,
             ),
         )
 
@@ -240,8 +248,15 @@ class Database:
             "status, duration_seconds, exit_code, error) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                cycle_id, agent, action, project_name, task_id,
-                status, duration_seconds, exit_code, error,
+                cycle_id,
+                agent,
+                action,
+                project_name,
+                task_id,
+                status,
+                duration_seconds,
+                exit_code,
+                error,
             ),
         )
 
@@ -278,8 +293,14 @@ class Database:
             "points_planned, points_completed, tasks_completed, tasks_carried_over) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                project_id, sprint_id, started_at, ended_at,
-                points_planned, points_completed, tasks_completed, tasks_carried_over,
+                project_id,
+                sprint_id,
+                started_at,
+                ended_at,
+                points_planned,
+                points_completed,
+                tasks_completed,
+                tasks_carried_over,
             ),
         )
 
@@ -288,9 +309,7 @@ class Database:
         """Return the current schema version."""
         conn = self.get_connection()
         try:
-            row = conn.execute(
-                "SELECT MAX(version) FROM schema_version"
-            ).fetchone()
+            row = conn.execute("SELECT MAX(version) FROM schema_version").fetchone()
             return row[0] if row and row[0] is not None else 0
         except sqlite3.OperationalError:
             return 0
