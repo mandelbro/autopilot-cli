@@ -12,3 +12,5 @@ uv.lock
 .hive-mind
 .claude-flow/agents.json
 .claude-flow/hive-mind/state.json
+
+.coverage
