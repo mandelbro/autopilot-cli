@@ -204,13 +204,15 @@ class TestSession:
             Session.from_json(json.dumps({"id": "s-1"}))
 
     def test_from_json_invalid_enum(self) -> None:
-        raw = json.dumps({
-            "id": "s-1",
-            "project": "p",
-            "type": "invalid_type",
-            "status": "running",
-            "started_at": "2026-01-01T00:00:00",
-        })
+        raw = json.dumps(
+            {
+                "id": "s-1",
+                "project": "p",
+                "type": "invalid_type",
+                "status": "running",
+                "started_at": "2026-01-01T00:00:00",
+            }
+        )
         with pytest.raises(ValueError, match="Invalid session data"):
             Session.from_json(raw)
 

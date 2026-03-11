@@ -1,9 +1,9 @@
 ## Overall Project Task Summary
 
-- **Total Tasks**: 90
-- **Pending**: 87
+- **Total Tasks**: 94
+- **Pending**: 91
 - **Complete**: 3
-- **Total Points**: 344
+- **Total Points**: 355
 - **Points Complete**: 13
 
 ## Project: Autopilot CLI
@@ -26,6 +26,7 @@
 - `tasks/tasks-7.md`: Contains Tasks 061 - 070 (10 tasks, 40 points) -- Main Phase 5: Enforcement (Layers) + UAT Phase 2 Completion
 - `tasks/tasks-8.md`: Contains Tasks 071 - 080 (10 tasks, 38 points) -- UAT Phase 3: Parallel Execution + Main Phase 6: Discovery
 - `tasks/tasks-9.md`: Contains Tasks 081 - 090 (10 tasks, 41 points) -- Main Phase 6-7: Templates, Migration, Multi-Project + UAT Phase 4: Learning
+- `tasks/tasks-10.md`: Contains Tasks 091 - 094 (4 tasks, 11 points) -- Dev Standards Compliance: Logging, Strict Types, Pre-commit, Config
 
 ## Phase Mapping
 

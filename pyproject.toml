@@ -38,6 +38,7 @@ packages = ["src/autopilot"]
 target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
+fix = true
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "TCH"]
@@ -45,6 +46,11 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["autopilot"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
 
 [tool.pyright]
 pythonVersion = "3.12"
@@ -56,4 +62,5 @@ exclude = ["tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-v --tb=short"

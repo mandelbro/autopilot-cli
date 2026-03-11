@@ -104,9 +104,7 @@ def _make_suggestion(func_name: str, other_file: str) -> str:
     )
 
 
-def _make_message(
-    func_name: str, other_file: str, similarity: float, line: int
-) -> str:
+def _make_message(func_name: str, other_file: str, similarity: float, line: int) -> str:
     pct = int(similarity * 100)
     basename = os.path.basename(other_file)
     return (
@@ -205,9 +203,7 @@ class DuplicationRule:
                                         func_a.lineno,
                                     ),
                                     severity=cfg.severity,
-                                    suggestion=_make_suggestion(
-                                        func_a.name, str(path_b)
-                                    ),
+                                    suggestion=_make_suggestion(func_a.name, str(path_b)),
                                 )
                             )
 

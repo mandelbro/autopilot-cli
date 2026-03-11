@@ -180,7 +180,9 @@ class AutopilotConfig(BaseModel):
             )
             raise ValueError(msg)
         if not isinstance(data, dict):
-            msg = f"Configuration file {path} must contain a YAML mapping, got {type(data).__name__}"
+            msg = (
+                f"Configuration file {path} must contain a YAML mapping, got {type(data).__name__}"
+            )
             raise ValueError(msg)
         return cls.model_validate(data)
 
@@ -220,7 +222,9 @@ def _load_yaml_dict(path: Path, label: str) -> dict:
     if data is None:
         return {}
     if not isinstance(data, dict):
-        msg = f"{label.capitalize()} ({path}) must contain a YAML mapping, got {type(data).__name__}"
+        msg = (
+            f"{label.capitalize()} ({path}) must contain a YAML mapping, got {type(data).__name__}"
+        )
         raise ValueError(msg)
     return data
 
