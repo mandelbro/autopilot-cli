@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "autopilot-cli"
+version = "0.1.0"
+description = "General-purpose autonomous development orchestrator"
+readme = {text = "", content-type = "text/plain"}
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "pydantic>=2.10",
+    "pyyaml>=6.0",
+    "structlog>=24.0",
+    "typer>=0.15",
+    "rich>=13.0",
+    "prompt-toolkit>=3.0",
+    "jinja2>=3.1",
+]
+
+[project.scripts]
+autopilot = "autopilot.cli.app:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "freezegun>=1.4",
+    "ruff>=0.9",
+    "pyright>=1.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autopilot"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "TCH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["autopilot"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.pyright]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+include = ["src"]
+exclude = ["tests"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
