@@ -248,7 +248,7 @@
 
 - **Title**: SQLite schema and database management
 - **File**: src/autopilot/utils/db.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want reliable analytics storage, so that cycle history, velocity metrics, and enforcement data are queryable and persistent.
@@ -299,7 +299,7 @@
 
 - **Title**: Python project template with Jinja2
 - **File**: templates/python/
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want project scaffolding templates, so that `autopilot init` generates a complete .autopilot/ directory with sensible defaults for Python projects.
