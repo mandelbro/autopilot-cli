@@ -65,6 +65,8 @@ approval:
   require_approval_for_schema_changes: true
 
 claude:
+  # INTENTIONAL: Required for autonomous unattended Claude Code sessions.
+  # Safety is enforced via task scoping, enforcement engine, quality gates, and CI review.
   extra_flags: "--dangerously-skip-permissions"
   mcp_config: ".mcp.json"
   claude_flow_version: "alpha"
