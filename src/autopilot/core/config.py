@@ -4,10 +4,8 @@ Three-level hierarchy: global defaults (~/.autopilot/config.yaml)
 -> project overrides (.autopilot/config.yaml) -> CLI flags.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -25,19 +23,19 @@ class SchedulerConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     strategy: Literal["interval", "event", "hybrid"] = "interval"
-    interval_seconds: int = Field(1800, gt=0)
-    cycle_timeout_seconds: int = Field(7200, gt=0)
-    agent_timeout_seconds: int = Field(900, gt=0)
+    interval_seconds: int = Field(default=1800, gt=0)
+    cycle_timeout_seconds: int = Field(default=7200, gt=0)
+    agent_timeout_seconds: int = Field(default=900, gt=0)
     agent_timeouts: dict[str, int] = Field(default_factory=dict)
-    consecutive_timeout_limit: int = Field(2, gt=0)
+    consecutive_timeout_limit: int = Field(default=2, gt=0)
 
 
 class UsageLimitsConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    daily_cycle_limit: int = Field(200, gt=0)
-    weekly_cycle_limit: int = Field(1400, gt=0)
-    max_agent_invocations_per_cycle: int = Field(40, gt=0)
+    daily_cycle_limit: int = Field(default=200, gt=0)
+    weekly_cycle_limit: int = Field(default=1400, gt=0)
+    max_agent_invocations_per_cycle: int = Field(default=40, gt=0)
 
 
 class AgentsConfig(BaseModel):
@@ -54,7 +52,7 @@ class AgentsConfig(BaseModel):
     models: dict[str, str] = Field(default_factory=dict)
     max_turns: dict[str, int] = Field(default_factory=dict)
     fallback_models: dict[str, list[str]] = Field(default_factory=dict)
-    max_concurrent: int = Field(3, gt=0)
+    max_concurrent: int = Field(default=3, gt=0)
 
 
 class QualityGatesConfig(BaseModel):
@@ -93,7 +91,7 @@ class SafetyConfig(BaseModel):
     auto_merge: bool = True
     require_ci_pass: bool = True
     require_review_approval: bool = True
-    max_files_per_commit: int = Field(100, gt=0)
+    max_files_per_commit: int = Field(default=100, gt=0)
     require_tests: bool = True
 
 
@@ -126,8 +124,8 @@ class RenderServiceConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     api_key_env: str = "RENDER_API_KEY"
-    poll_interval_seconds: int = Field(60, gt=0)
-    deploy_timeout_seconds: int = Field(600, gt=0)
+    poll_interval_seconds: int = Field(default=60, gt=0)
+    deploy_timeout_seconds: int = Field(default=600, gt=0)
 
 
 class DeploymentMonitoringConfig(BaseModel):
@@ -135,7 +133,7 @@ class DeploymentMonitoringConfig(BaseModel):
 
     enabled: bool = False
     render: RenderServiceConfig = Field(default_factory=RenderServiceConfig)
-    health_check_interval_seconds: int = Field(300, gt=0)
+    health_check_interval_seconds: int = Field(default=300, gt=0)
 
 
 class AutopilotConfig(BaseModel):
@@ -158,7 +156,7 @@ class AutopilotConfig(BaseModel):
     )
 
     @classmethod
-    def from_yaml(cls, path: Path) -> AutopilotConfig:
+    def from_yaml(cls, path: Path) -> Self:
         """Load configuration from a YAML file."""
         if not path.exists():
             msg = (
@@ -198,7 +196,7 @@ class AutopilotConfig(BaseModel):
             )
 
     @classmethod
-    def merge(cls, global_path: Path, project_path: Path) -> AutopilotConfig:
+    def merge(cls, global_path: Path, project_path: Path) -> Self:
         """Merge global defaults with project overrides.
 
         Project values take precedence over global values.
