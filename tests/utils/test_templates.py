@@ -36,9 +36,17 @@ class TestConfigTemplate:
         rendered = template.render(project_name="test", project_root=".")
         data = yaml.safe_load(rendered)
         expected_sections = {
-            "project", "scheduler", "usage_limits", "agents",
-            "quality_gates", "enforcement", "safety", "approval",
-            "claude", "git", "deployment_monitoring",
+            "project",
+            "scheduler",
+            "usage_limits",
+            "agents",
+            "quality_gates",
+            "enforcement",
+            "safety",
+            "approval",
+            "claude",
+            "git",
+            "deployment_monitoring",
         }
         assert expected_sections.issubset(set(data.keys()))
 
