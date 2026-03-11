@@ -450,7 +450,7 @@
 
 - **Title**: Project initialization command and core logic
 - **File**: src/autopilot/core/project.py, src/autopilot/cli/project.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want to initialize a project with `autopilot init`, so that I get a working .autopilot/ directory with config, agent prompts, and board files ready for autonomous development.
