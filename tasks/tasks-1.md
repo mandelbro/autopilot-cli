@@ -352,7 +352,7 @@
 
 - **Title**: Typer CLI application skeleton
 - **File**: src/autopilot/cli/app.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a user, I want a well-organized CLI with subcommand groups and auto-generated help, so that I can discover and use all autopilot capabilities from the terminal.
@@ -398,7 +398,7 @@
 
 - **Title**: Rich display helpers
 - **File**: src/autopilot/cli/display.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a user, I want beautiful, consistent terminal output, so that project status, task boards, and reports are easy to read and visually organized.
