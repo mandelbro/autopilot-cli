@@ -2,196 +2,43 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [labeled]
-
-concurrency:
-  group: claude-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+    types: [opened, synchronize, ready_for_review, reopened]
+    # Optional: Only run on specific file changes
+    # paths:
+    #   - "src/**/*.ts"
+    #   - "src/**/*.tsx"
+    #   - "src/**/*.js"
+    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
-    if: ${{ github.event.label.name == 'claude-review' }}
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read
-      pull-requests: write
+      pull-requests: read
       issues: read
       id-token: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: Create MCP Config
-        run: |
-          cat > /tmp/mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "context7": {
-                "command": "npx",
-                "args": ["-y", "@upstash/context7-mcp@2.1.1"]
-              },
-              "sequential-thinking": {
-                "command": "npx",
-                "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
-              }
-            }
-          }
-          EOF
-      - name: Count prior review rounds
-        id: review-count
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          COUNT=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json reviews \
-            --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" and .author.login == "claude")] | length')
-          echo "prior_rounds=${COUNT}" >> "$GITHUB_OUTPUT"
 
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
-        env:
-          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MAX_MCP_OUTPUT_TOKENS: 125000
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: |
-            You are performing a code review of pull request #${{ github.event.pull_request.number }}
-
-            Pull Request Metadata:
-            - REPO: ${{ github.repository }}
-            - PR Number: ${{ github.event.pull_request.number }}
-            - PR Title: ${{ github.event.pull_request.title }}
-            - Pull Request Body: ${{ github.event.pull_request.body }}
-            - Pull Request Created At: ${{ github.event.pull_request.created_at }}
-            - Pull Request Updated At: ${{ github.event.pull_request.updated_at }}
-            - Pull Request Diff Url: ${{ github.event.pull_request.diff_url }}
-
-            ## Review Round Context
-
-            This is review round ${{ steps.review-count.outputs.prior_rounds }} (prior CHANGES_REQUESTED reviews from claude).
-
-            **Review scoping by round:**
-            - **Round 0 (first review):** Full comprehensive review — catch everything.
-            - **Round 1-2:** Primary task is verifying previous fixes were applied correctly. New blockers ONLY for security vulnerabilities or data corruption bugs. All other new findings are non-blocking suggestions (use APPROVE with comments, not REQUEST_CHANGES).
-            - **Round 3+:** APPROVE with suggestions unless an actively exploitable security vulnerability or data corruption bug is found. Prefix your review with "Review Round ${{ steps.review-count.outputs.prior_rounds }} — Convergence Mode." Do NOT request changes for style, architecture, testing gaps, or refactoring opportunities at this stage.
-
-            ## Code Review Instructions
-
-            ### Gather comprehensive context
-            Your first step before any review is to attain a full understanding of the services, components, database structure, third party libraries that exist in the codebase which are related to the work you're reviewing. You will employ this knowledge to ensure that any new work being proposed, planned, or contributed leverages existing infrastructure in order to reduce code duplication and improve maintainability of the codebase.
-
-            - Review @CLAUDE.md
-            - Check @docs/discovery/index.md for existing capabilities
-            - Check for related tasks in the @tasks/ directory
-            - Review the PR description and files modified in the PR
-            - Identify related services, components, and shared utilities
-            - Get diff information: Use `mcp__github__get_pull_request_diff` to understand the code changes and line numbers
-
-            ### File and Context Optimization
-
-            1. **Optimal (100-200 lines)**: Full AI context awareness, best performance
-            2. **Good (200-500 lines)**: Excellent performance with minor limitations
-            3. **Degraded (500-750 lines)**: Reduced effectiveness, attention dilution
-            4. **Problematic (750+ lines)**: Context overflow, outline-only mode, poor AI assistance
-
-            #### For files approaching 400+ lines, evaluate for splitting opportunities:
-            - Extract utility functions to separate files
-            - Move related classes to dedicated modules
-            - Separate concerns into logical boundaries
-            - Create index files for clean imports
-
-            ### Identify Hidden Complexity
-            - Point out non-obvious edge cases and failure modes
-            - Identify implicit dependencies that aren't immediately apparent
-            - Highlight areas where "simple" changes cascade into complex migrations
-            - Explain WHY something is complex, not just that it is
-            - Reference specific examples from your experience when relevant
-
-            ### Analyze System Interactions
-            - Map out how different services and components will interact
-            - Identify integration points that become bottlenecks or failure points
-            - Consider data consistency challenges across boundaries
-            - Evaluate the operational burden of proposed architectures
-            - Think about emergent behaviors and unintended use cases
-
-            ### Apply Design Patterns Wisely
-            - Reference relevant design patterns when they genuinely apply
-            - Call out anti-patterns with specific explanations of why they're problematic
-            - Suggest alternatives based on the specific context, not generic best practices
-            - Acknowledge when a "bad" pattern might be the right tradeoff
-
-            ### Provide Actionable Alternatives
-            - Offer concrete alternatives with clear tradeoffs
-            - Suggest incremental approaches when full solutions are too risky
-            - Provide specific next steps, not vague recommendations
-            - Include "escape hatches" for when things don't go as planned
-
-            #### Output structure in the review body:
-            1) Summary: one paragraph of the overall assessment
-            2) Findings by category: bullets under Quality, Bugs, Performance, Security, Tests
-            3) Duplication/Refactor opportunities: list duplicates and propose a single shared implementation
-            4) Suggested edits: one or more suggestion blocks
-            5) Action checklist: ordered list of next steps
-
-            Note: The PR branch is already checked out in the current working directory.
-
-            ## Review Verdict and Approval
-
-            After completing the review, you MUST submit a formal GitHub review verdict.
-
-            ### Blocking criteria (any one triggers REQUEST_CHANGES):
-            - Security vulnerabilities (injection, auth bypass, secrets exposure)
-            - Bugs that would cause runtime failures or data corruption
-            - Missing or broken tests for new/changed behavior
-            - Rule of Three violations (3+ duplicate implementations without consolidation)
-            - Files exceeding 750 lines without architectural justification
-
-            ### Approval criteria (ALL must be true):
-            - No blocking issues found from the list above
-            - CI checks are passing (or failures are unrelated to this PR)
-            - Code follows project conventions documented in CLAUDE.md
-            - Changes match the stated PR description and scope
-
-            ### How to submit your verdict:
-
-            **If approved** (no blocking issues):
-            ```
-            gh pr review ${{ github.event.pull_request.number }} --approve --body "$(cat <<'VERDICT'
-            ## Claude Code Review: Approved
-
-            <your summary findings here>
-
-            **Verdict:** All quality gates passed. No blocking issues found.
-            VERDICT
-            )"
-            ```
-
-            **If changes requested** (blocking issues found):
-            ```
-            gh pr review ${{ github.event.pull_request.number }} --request-changes --body "$(cat <<'VERDICT'
-            ## Claude Code Review: Changes Requested
-
-            <your summary findings and required changes here>
-
-            **Verdict:** Blocking issues must be resolved before merge.
-            VERDICT
-            )"
-            ```
-
-            ### Workflow:
-            1. Use `gh pr diff` and inline comments for specific code feedback
-            2. Use `gh pr comment` for the detailed review body (categories, suggestions, checklist)
-            3. Submit the formal verdict using `gh pr review` as the FINAL step
-            4. Only post GitHub comments and reviews - don't submit review text as messages
-
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.anthropic.com/en/docs/claude-code/sdk#command-line for available options
-          settings: '.claude/settings.json'
-          claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),mcp__sequential-thinking__sequentialthinking,mcp__context7__resolve-library-id,mcp__context7__get-library-docs"
-            --max-turns 60
-            --mcp-config /tmp/mcp-config.json
+          # or https://code.claude.com/docs/en/cli-reference for available options
+
