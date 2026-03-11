@@ -90,6 +90,18 @@ class TestInitializeProject:
         with pytest.raises(ValueError, match="No templates found"):
             initialize_project("test", project_type="ruby", root_path=tmp_path)
 
+    def test_rejects_path_traversal_type(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid project type"):
+            initialize_project("test", project_type="../../../etc", root_path=tmp_path)
+
+    def test_rejects_slash_in_type(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid project type"):
+            initialize_project("test", project_type="foo/bar", root_path=tmp_path)
+
+    def test_rejects_dot_dot_in_type(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid project type"):
+            initialize_project("test", project_type="..", root_path=tmp_path)
+
     def test_idempotent_global_registration(self, tmp_path: Path) -> None:
         root1 = tmp_path / "proj1"
         root1.mkdir()

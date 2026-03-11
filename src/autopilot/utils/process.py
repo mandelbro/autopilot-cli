@@ -66,6 +66,7 @@ class PidFile:
 
         Returns True if acquired, False if another live process holds it.
         Automatically recovers stale locks (dead process or expired TTL).
+        Uses atomic exclusive-create to avoid TOCTOU races.
         """
         pid = pid if pid is not None else os.getpid()
 
@@ -77,7 +78,18 @@ class PidFile:
             self.path.unlink(missing_ok=True)
 
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(str(pid))
+        try:
+            fd = os.open(str(self.path), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+            os.write(fd, str(pid).encode())
+            os.close(fd)
+        except FileExistsError:
+            # Another process raced us — check if it's alive
+            existing = self._read()
+            if existing is not None and is_running(existing):
+                return False
+            # The other writer died; retry once
+            self.path.unlink(missing_ok=True)
+            self.path.write_text(str(pid))
         return True
 
     def release(self) -> None:

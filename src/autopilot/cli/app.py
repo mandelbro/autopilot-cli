@@ -80,23 +80,10 @@ def init(
     ),
     root: str = typer.Option(".", "--root", "-r", help="Project root directory."),
 ) -> None:
-    """Initialize a new autopilot project."""
-    from pathlib import Path
+    """Initialize a new autopilot project (delegates to ``project init``)."""
+    from autopilot.cli.project import run_init
 
-    from autopilot.cli.display import console, notification
-    from autopilot.core.project import initialize_project
-
-    root_path = Path(root).resolve()
-    try:
-        result = initialize_project(name=name, project_type=project_type, root_path=root_path)
-    except (FileExistsError, ValueError) as exc:
-        notification("error", str(exc))
-        raise typer.Exit(code=1) from exc
-
-    notification("success", f"Project '{result.project_name}' initialized!")
-    console.print()
-    for i, step in enumerate(result.next_steps, 1):
-        console.print(f"  {i}. {step}")
+    run_init(name=name, project_type=project_type, root=root)
 
 
 @app.command()

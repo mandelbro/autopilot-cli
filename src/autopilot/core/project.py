@@ -7,6 +7,8 @@ SQLite registration.
 
 from __future__ import annotations
 
+import logging
+import re
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,6 +17,10 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from autopilot.utils.paths import ensure_dir_structure, get_global_dir
+
+_log = logging.getLogger(__name__)
+
+_VALID_PROJECT_TYPE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 _TEMPLATES_DIR = Path(__file__).resolve().parents[3] / "templates"
 _GITIGNORE_CONTENT = "# Autopilot runtime state (not version controlled)\nstate/\nlogs/\n"
@@ -44,6 +50,11 @@ def initialize_project(
     registers the project globally in ~/.autopilot/projects.yaml,
     and optionally registers in the SQLite database.
     """
+    # Validate project_type to prevent path traversal
+    if not _VALID_PROJECT_TYPE.match(project_type):
+        msg = f"Invalid project type '{project_type}': must contain only alphanumeric characters, hyphens, and underscores"
+        raise ValueError(msg)
+
     root = (root_path or Path.cwd()).resolve()
     autopilot_dir = root / ".autopilot"
 
@@ -160,5 +171,4 @@ def _register_sqlite(*, name: str, path: str, project_type: str) -> None:
             type=project_type,
         )
     except Exception:  # noqa: BLE001
-        # SQLite registration is non-critical; project works without it
-        pass
+        _log.debug("SQLite registration failed (non-critical)", exc_info=True)

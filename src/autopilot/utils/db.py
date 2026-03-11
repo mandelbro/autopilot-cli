@@ -147,9 +147,17 @@ class Database:
         self,
         sql: str,
         params: tuple[Any, ...] = (),
+        *,
+        conn: sqlite3.Connection | None = None,
     ) -> None:
-        """Execute a write with exponential backoff on SQLITE_BUSY."""
-        conn = self.get_connection()
+        """Execute a write with exponential backoff on SQLITE_BUSY.
+
+        If *conn* is supplied the caller owns the connection lifetime;
+        otherwise a fresh connection is opened and closed automatically.
+        """
+        owned = conn is None
+        if owned:
+            conn = self.get_connection()
         try:
             for attempt in range(_MAX_RETRIES):
                 try:
@@ -163,7 +171,8 @@ class Database:
                         raise
                     time.sleep(_BASE_DELAY * (2**attempt))
         finally:
-            conn.close()
+            if owned:
+                conn.close()
 
     def insert_project(
         self,

@@ -61,7 +61,7 @@ def run_claude_cli(
     *,
     model: str = "sonnet",
     max_turns: int = 10,
-    extra_flags: str = "",
+    extra_flags: list[str] | str = "",
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
     timeout_seconds: int = 900,
@@ -69,10 +69,15 @@ def run_claude_cli(
     """Invoke the Claude CLI with the given prompt and return the result.
 
     Uses a clean environment by default to prevent secret leakage.
+    ``extra_flags`` accepts a list of strings (preferred) or a single
+    whitespace-delimited string for backwards compatibility.
     """
     cmd = ["claude", "--print", "--model", model, "--max-turns", str(max_turns)]
     if extra_flags:
-        cmd.extend(extra_flags.split())
+        if isinstance(extra_flags, str):
+            cmd.extend(extra_flags.split())
+        else:
+            cmd.extend(extra_flags)
     cmd.extend(["--prompt", prompt])
 
     clean_env = env if env is not None else build_clean_env()
