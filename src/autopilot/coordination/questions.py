@@ -114,10 +114,7 @@ class QuestionQueue:
 
     def has_blocking(self) -> bool:
         """Check if there are any blocking pending questions."""
-        return any(
-            q.priority == QuestionPriority.BLOCKING
-            for q in self.list_pending()
-        )
+        return any(q.priority == QuestionPriority.BLOCKING for q in self.list_pending())
 
     def _load(self) -> list[Question]:
         """Parse question-queue.md into structured questions."""
