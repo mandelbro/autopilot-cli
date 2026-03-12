@@ -134,6 +134,27 @@ class TestTemplateRenderer:
         assert "_hidden.txt" not in files
 
 
+class TestStrictUndefined:
+    def test_missing_variable_raises(self, tmp_path: Path) -> None:
+        from jinja2.exceptions import UndefinedError
+
+        pkg_dir = tmp_path / "pkg"
+        tpl_dir = pkg_dir / "test"
+        tpl_dir.mkdir(parents=True)
+        (tpl_dir / "config.yaml.j2").write_text("name: {{ missing_var }}\n")
+
+        output = tmp_path / "output"
+        output.mkdir()
+
+        renderer = TemplateRenderer(
+            "test",
+            package_templates_dir=pkg_dir,
+            user_templates_dir=tmp_path / "nope",
+        )
+        with pytest.raises(UndefinedError):
+            renderer.render_to(output, {})
+
+
 class TestTemplateInheritance:
     def test_extends_parent(self, tmp_path: Path) -> None:
         import yaml

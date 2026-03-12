@@ -7,6 +7,7 @@ Supports both project-level and global (~/.autopilot/agents/) agents.
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from autopilot.utils.paths import get_global_dir
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from autopilot.core.models import DispatchPlan
 
 _log = logging.getLogger(__name__)
+_VALID_AGENT_NAME = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 class AgentNotFoundError(Exception):
@@ -76,7 +78,12 @@ class AgentRegistry:
         return [d.agent for d in plan.dispatches if d.agent not in available]
 
     def _resolve_path(self, name: str) -> Path | None:
-        """Find the .md file for an agent, project-level first."""
+        """Find the .md file for an agent, project-level first.
+
+        Validates that the name is safe to prevent path traversal.
+        """
+        if not _VALID_AGENT_NAME.match(name):
+            return None
         if self._project_dir:
             candidate = self._project_dir / f"{name}.md"
             if candidate.is_file():

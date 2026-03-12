@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from autopilot.utils.paths import get_global_dir
 
@@ -85,6 +85,7 @@ class TemplateRenderer:
         env = Environment(
             loader=FileSystemLoader(search_paths),
             keep_trailing_newline=True,
+            undefined=StrictUndefined,
         )
 
         for template_name in env.list_templates():

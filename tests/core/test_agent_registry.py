@@ -64,6 +64,34 @@ class TestAgentRegistry:
         assert registry.load_prompt("reviewer") == "global reviewer"
 
 
+class TestPathTraversalProtection:
+    def test_rejects_slash_in_name(self, tmp_path: Path) -> None:
+        agents_dir = tmp_path / "agents"
+        agents_dir.mkdir()
+        registry = AgentRegistry(project_agents_dir=agents_dir)
+        assert registry.validate_agent("../../etc/passwd") is False
+
+    def test_rejects_dotdot_in_name(self, tmp_path: Path) -> None:
+        agents_dir = tmp_path / "agents"
+        agents_dir.mkdir()
+        registry = AgentRegistry(project_agents_dir=agents_dir)
+        assert registry.validate_agent("..") is False
+
+    def test_rejects_dot_prefix(self, tmp_path: Path) -> None:
+        agents_dir = tmp_path / "agents"
+        agents_dir.mkdir()
+        registry = AgentRegistry(project_agents_dir=agents_dir)
+        assert registry.validate_agent(".hidden") is False
+
+    def test_load_prompt_rejects_traversal(self, tmp_path: Path) -> None:
+        agents_dir = tmp_path / "agents"
+        agents_dir.mkdir()
+        (agents_dir / "coder.md").write_text("prompt")
+        registry = AgentRegistry(project_agents_dir=agents_dir)
+        with pytest.raises(AgentNotFoundError):
+            registry.load_prompt("../secrets")
+
+
 class TestLoadPrompt:
     def test_load_prompt_success(self, tmp_path: Path) -> None:
         agents_dir = tmp_path / "agents"
