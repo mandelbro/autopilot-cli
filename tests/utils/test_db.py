@@ -5,6 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path  # noqa: TC003
 
+import pytest
+
 from autopilot.utils.db import Database
 
 
@@ -109,23 +111,13 @@ class TestInsertProject:
     def test_duplicate_name_raises(self, tmp_path: Path) -> None:
         db = Database(tmp_path / "test.db")
         db.insert_project(id="p1", name="dup", path="/a", type="python")
-        try:
+        with pytest.raises(sqlite3.IntegrityError):
             db.insert_project(id="p2", name="dup", path="/b", type="python")
-        except sqlite3.IntegrityError:
-            pass
-        else:
-            msg = "Expected IntegrityError for duplicate name"
-            raise AssertionError(msg)
 
     def test_invalid_type_raises(self, tmp_path: Path) -> None:
         db = Database(tmp_path / "test.db")
-        try:
+        with pytest.raises(sqlite3.IntegrityError):
             db.insert_project(id="p1", name="bad", path="/a", type="ruby")
-        except sqlite3.IntegrityError:
-            pass
-        else:
-            msg = "Expected IntegrityError for invalid type"
-            raise AssertionError(msg)
 
 
 class TestInsertSession:
@@ -234,7 +226,7 @@ class TestInsertVelocity:
 class TestForeignKeyConstraints:
     def test_session_requires_project(self, tmp_path: Path) -> None:
         db = Database(tmp_path / "test.db")
-        try:
+        with pytest.raises(sqlite3.IntegrityError):
             db.insert_session(
                 id="sess-1",
                 project_id="nonexistent",
@@ -242,8 +234,3 @@ class TestForeignKeyConstraints:
                 status="running",
                 started_at="2024-01-01T00:00:00Z",
             )
-        except sqlite3.IntegrityError:
-            pass
-        else:
-            msg = "Expected IntegrityError for missing project FK"
-            raise AssertionError(msg)

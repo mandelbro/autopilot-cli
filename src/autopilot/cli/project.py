@@ -13,24 +13,8 @@ from autopilot.core.project import initialize_project
 project_app = typer.Typer(name="project", help="Project lifecycle management.")
 
 
-@project_app.command("init")
-def project_init(
-    name: str = typer.Option(..., "--name", "-n", prompt="Project name", help="Project name."),
-    project_type: str = typer.Option(
-        "python",
-        "--type",
-        "-t",
-        prompt="Project type (python/typescript/hybrid)",
-        help="Project type.",
-    ),
-    root: str = typer.Option(
-        ".",
-        "--root",
-        "-r",
-        help="Project root directory.",
-    ),
-) -> None:
-    """Initialize a new autopilot project with scaffolded .autopilot/ directory."""
+def run_init(*, name: str, project_type: str, root: str) -> None:
+    """Shared init logic used by both ``autopilot init`` and ``autopilot project init``."""
     root_path = Path(root).resolve()
 
     try:
@@ -39,10 +23,7 @@ def project_init(
             project_type=project_type,
             root_path=root_path,
         )
-    except FileExistsError as exc:
-        notification("error", str(exc))
-        raise typer.Exit(code=1) from exc
-    except ValueError as exc:
+    except (FileExistsError, ValueError) as exc:
         notification("error", str(exc))
         raise typer.Exit(code=1) from exc
 
@@ -61,6 +42,27 @@ def project_init(
     console.print("[bold]Next steps:[/bold]")
     for i, step in enumerate(result.next_steps, 1):
         console.print(f"  {i}. {step}")
+
+
+@project_app.command("init")
+def project_init(
+    name: str = typer.Option(..., "--name", "-n", prompt="Project name", help="Project name."),
+    project_type: str = typer.Option(
+        "python",
+        "--type",
+        "-t",
+        prompt="Project type (python/typescript/hybrid)",
+        help="Project type.",
+    ),
+    root: str = typer.Option(
+        ".",
+        "--root",
+        "-r",
+        help="Project root directory.",
+    ),
+) -> None:
+    """Initialize a new autopilot project with scaffolded .autopilot/ directory."""
+    run_init(name=name, project_type=project_type, root=root)
 
 
 @project_app.command("list")

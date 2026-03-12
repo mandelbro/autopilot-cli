@@ -93,6 +93,11 @@ class TestProgressBar:
         p = progress_bar("Working...", 100)
         assert p is not None
 
+    def test_pre_adds_task(self) -> None:
+        p = progress_bar("Processing", 50)
+        assert len(p.tasks) == 1
+        assert p.tasks[0].total == 50
+
 
 class TestFormatSprintPoints:
     def test_low_points(self) -> None:

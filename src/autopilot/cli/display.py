@@ -77,20 +77,21 @@ def status_panel(title: str, content: str, status: str = "info") -> Panel:
     return Panel(content, title=title, border_style=style, width=80)
 
 
-def progress_bar(description: str, total: int) -> Progress:
-    """Create a Rich progress bar for long operations.
+def progress_bar(description: str = "", total: int = 0) -> Progress:
+    """Create a Rich progress bar and pre-add a task.
 
-    The caller should use ``progress.add_task(description, total=total)``
-    after entering the progress context manager.
+    Returns a ``Progress`` instance with one task already added. The caller
+    should enter the context manager and call ``progress.update(task_id, advance=N)``.
     """
-    _ = description, total  # used by caller via add_task
-    return Progress(
+    progress = Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TaskProgressColumn(),
         console=console,
     )
+    progress.add_task(description, total=total)
+    return progress
 
 
 def format_sprint_points(points: int | Any) -> str:

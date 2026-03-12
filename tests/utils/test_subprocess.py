@@ -88,6 +88,16 @@ class TestRunClaudeCli:
             assert "--verbose" in cmd
             assert "--debug" in cmd
 
+    def test_extra_flags_list(self) -> None:
+        with patch("autopilot.utils.subprocess.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="", stderr=""
+            )
+            run_claude_cli("hi", extra_flags=["--verbose", "--debug"])
+            cmd = mock_run.call_args[0][0]
+            assert "--verbose" in cmd
+            assert "--debug" in cmd
+
     def test_timeout_propagated(self) -> None:
         with patch("autopilot.utils.subprocess.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
