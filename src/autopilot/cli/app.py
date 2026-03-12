@@ -113,12 +113,6 @@ def migrate() -> None:
 # -- Stub subcommands for Phase 2+ -------------------------------------------
 
 
-@project_app.command("show")
-def project_show() -> None:
-    """Show details for the current project."""
-    typer.echo("Not yet implemented: project show")
-
-
 @task_app.command("list")
 def task_list() -> None:
     """List tasks in the current sprint."""

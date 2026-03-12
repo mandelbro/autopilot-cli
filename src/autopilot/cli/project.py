@@ -1,4 +1,4 @@
-"""CLI commands for project management (UX Design Section 5.1)."""
+"""CLI commands for project management (UX Design Section 5.1, Tasks 010-011)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,31 @@ from pathlib import Path
 import typer
 from rich.table import Table
 
-from autopilot.cli.display import console, notification
-from autopilot.core.project import initialize_project
+from autopilot.cli.display import console, format_status, notification
+from autopilot.core.project import ProjectRegistry, initialize_project
+from autopilot.utils.paths import get_global_dir
 
 project_app = typer.Typer(name="project", help="Project lifecycle management.")
+
+
+def _get_active_project_path() -> Path:
+    """Return the path to the active project marker file."""
+    return get_global_dir() / "active_project"
+
+
+def _get_active_project() -> str:
+    """Read the currently active project name, or empty string."""
+    path = _get_active_project_path()
+    if path.exists():
+        return path.read_text().strip()
+    return ""
+
+
+def _set_active_project(name: str) -> None:
+    """Write the active project name."""
+    path = _get_active_project_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(name)
 
 
 def run_init(*, name: str, project_type: str, root: str) -> None:
@@ -30,7 +51,6 @@ def run_init(*, name: str, project_type: str, root: str) -> None:
     notification("success", f"Project '{result.project_name}' initialized!")
     console.print()
 
-    # Show created files
     table = Table(title="Created Files", width=80)
     table.add_column("File", style="dim")
     for f in result.files_created:
@@ -38,7 +58,6 @@ def run_init(*, name: str, project_type: str, root: str) -> None:
     console.print(table)
     console.print()
 
-    # Show next steps
     console.print("[bold]Next steps:[/bold]")
     for i, step in enumerate(result.next_steps, 1):
         console.print(f"  {i}. {step}")
@@ -68,4 +87,148 @@ def project_init(
 @project_app.command("list")
 def project_list_cmd() -> None:
     """List all registered projects."""
-    typer.echo("Not yet implemented: project list")
+    registry = ProjectRegistry()
+    projects = registry.load()
+
+    if not projects:
+        notification("info", "No projects registered. Run 'autopilot init' to create one.")
+        return
+
+    table = Table(title="Projects", width=80)
+    table.add_column("Name", style="bold")
+    table.add_column("Type")
+    table.add_column("Path", style="dim")
+    table.add_column("Status", width=10)
+
+    active = _get_active_project()
+    for p in projects:
+        if p.archived:
+            continue
+        status = "active" if p.name == active else ""
+        table.add_row(p.name, p.type, p.path, format_status(status) if status else "")
+    console.print(table)
+
+
+@project_app.command("show")
+def project_show(
+    name: str = typer.Argument(default="", help="Project name (default: active project)."),
+) -> None:
+    """Show detailed project information."""
+    if not name:
+        name = _get_active_project()
+    if not name:
+        notification("error", "No project specified and no active project set.")
+        raise typer.Exit(code=1)
+
+    registry = ProjectRegistry()
+    project = registry.find_by_name(name)
+    if project is None:
+        notification("error", f"Project '{name}' not found in registry.")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold]Project:[/bold] {project.name}")
+    console.print(f"[bold]Type:[/bold] {project.type}")
+    console.print(f"[bold]Path:[/bold] {project.path}")
+    console.print(f"[bold]Registered:[/bold] {project.registered_at}")
+    if project.last_active:
+        console.print(f"[bold]Last Active:[/bold] {project.last_active}")
+    console.print(f"[bold]Archived:[/bold] {project.archived}")
+
+    project_path = Path(project.path)
+    config_path = project_path / ".autopilot" / "config.yaml"
+    if config_path.exists():
+        console.print(f"[bold]Config:[/bold] {config_path}")
+    agents_dir = project_path / ".autopilot" / "agents"
+    if agents_dir.is_dir():
+        agents = [f.stem for f in agents_dir.iterdir() if f.suffix == ".md"]
+        if agents:
+            console.print(f"[bold]Agents:[/bold] {', '.join(sorted(agents))}")
+
+
+@project_app.command("switch")
+def project_switch(
+    name: str = typer.Argument(..., help="Project name to switch to."),
+) -> None:
+    """Set the active project context."""
+    registry = ProjectRegistry()
+    project = registry.find_by_name(name)
+    if project is None:
+        notification("error", f"Project '{name}' not found in registry.")
+        raise typer.Exit(code=1)
+    if project.archived:
+        notification("error", f"Project '{name}' is archived.")
+        raise typer.Exit(code=1)
+
+    _set_active_project(name)
+    registry.update_last_active(name)
+    notification("success", f"Switched to project '{name}'.")
+
+
+@project_app.command("config")
+def project_config(
+    key: str = typer.Argument(default="", help="Config key to get/set."),
+    value: str = typer.Argument(default="", help="Value to set (omit to get)."),
+) -> None:
+    """Get or set project config values."""
+    import yaml as _yaml
+
+    name = _get_active_project()
+    if not name:
+        notification("error", "No active project. Use 'autopilot project switch' first.")
+        raise typer.Exit(code=1)
+
+    registry = ProjectRegistry()
+    project = registry.find_by_name(name)
+    if project is None:
+        notification("error", f"Project '{name}' not found.")
+        raise typer.Exit(code=1)
+
+    config_path = Path(project.path) / ".autopilot" / "config.yaml"
+    if not config_path.exists():
+        notification("error", f"Config file not found: {config_path}")
+        raise typer.Exit(code=1)
+
+    data = _yaml.safe_load(config_path.read_text()) or {}
+
+    if not key:
+        console.print_json(data=data)
+        return
+
+    if not value:
+        # Get a key using dot notation
+        parts = key.split(".")
+        current = data
+        for part in parts:
+            if isinstance(current, dict) and part in current:
+                current = current[part]
+            else:
+                notification("error", f"Key '{key}' not found.")
+                raise typer.Exit(code=1)
+        console.print(f"{key} = {current}")
+        return
+
+    # Set a key using dot notation
+    parts = key.split(".")
+    current = data
+    for part in parts[:-1]:
+        if part not in current or not isinstance(current[part], dict):
+            current[part] = {}
+        current = current[part]
+    current[parts[-1]] = value
+    config_path.write_text(_yaml.dump(data, default_flow_style=False))
+    notification("success", f"Set {key} = {value}")
+
+
+@project_app.command("archive")
+def project_archive(
+    name: str = typer.Argument(..., help="Project name to archive."),
+) -> None:
+    """Mark a project as archived (soft delete from active list)."""
+    registry = ProjectRegistry()
+    project = registry.find_by_name(name)
+    if project is None:
+        notification("error", f"Project '{name}' not found in registry.")
+        raise typer.Exit(code=1)
+
+    registry.archive(name)
+    notification("success", f"Project '{name}' archived.")
