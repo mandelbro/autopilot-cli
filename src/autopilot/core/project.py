@@ -7,6 +7,7 @@ thread-safe access to ~/.autopilot/projects.yaml.
 
 from __future__ import annotations
 
+import contextlib
 import fcntl
 import logging
 import re
@@ -14,7 +15,10 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -74,6 +78,18 @@ class ProjectRegistry:
         self._global_dir = global_dir or get_global_dir()
         self._global_dir.mkdir(parents=True, exist_ok=True)
         self._projects_file = self._global_dir / "projects.yaml"
+        self._lock_file = self._projects_file.with_suffix(".yaml.lock")
+
+    @contextlib.contextmanager
+    def _locked(self) -> Iterator[None]:
+        """Hold an exclusive lock across a read-modify-write cycle."""
+        self._lock_file.touch()
+        with open(self._lock_file) as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lf, fcntl.LOCK_UN)
 
     def load(self) -> list[RegisteredProject]:
         """Load all registered projects."""
@@ -82,25 +98,27 @@ class ProjectRegistry:
 
     def register(self, name: str, path: str, project_type: str) -> RegisteredProject:
         """Register a new project. Raises ValueError on duplicate name."""
-        raw = self._read_raw()
-        for p in raw:
-            if p.get("name") == name:
-                msg = f"Project '{name}' is already registered"
-                raise ValueError(msg)
+        with self._locked():
+            raw = self._read_raw()
+            for p in raw:
+                if p.get("name") == name:
+                    msg = f"Project '{name}' is already registered"
+                    raise ValueError(msg)
 
-        project = RegisteredProject(name=name, path=path, type=project_type)
-        raw.append(self._project_to_dict(project))
-        self._write_raw(raw)
+            project = RegisteredProject(name=name, path=path, type=project_type)
+            raw.append(self._project_to_dict(project))
+            self._write_raw(raw)
         return project
 
     def unregister(self, name: str) -> None:
         """Remove a project from the registry (does not delete files)."""
-        raw = self._read_raw()
-        filtered = [p for p in raw if p.get("name") != name]
-        if len(filtered) == len(raw):
-            msg = f"Project '{name}' not found in registry"
-            raise KeyError(msg)
-        self._write_raw(filtered)
+        with self._locked():
+            raw = self._read_raw()
+            filtered = [p for p in raw if p.get("name") != name]
+            if len(filtered) == len(raw):
+                msg = f"Project '{name}' not found in registry"
+                raise KeyError(msg)
+            self._write_raw(filtered)
 
     def find_by_name(self, name: str) -> RegisteredProject | None:
         """Find a project by name."""
@@ -119,25 +137,27 @@ class ProjectRegistry:
 
     def update_last_active(self, name: str) -> None:
         """Update the last_active timestamp for a project."""
-        raw = self._read_raw()
-        for p in raw:
-            if p.get("name") == name:
-                p["last_active"] = _utc_now().isoformat()
-                self._write_raw(raw)
-                return
-        msg = f"Project '{name}' not found in registry"
-        raise KeyError(msg)
+        with self._locked():
+            raw = self._read_raw()
+            for p in raw:
+                if p.get("name") == name:
+                    p["last_active"] = _utc_now().isoformat()
+                    self._write_raw(raw)
+                    return
+            msg = f"Project '{name}' not found in registry"
+            raise KeyError(msg)
 
     def archive(self, name: str) -> None:
         """Mark a project as archived."""
-        raw = self._read_raw()
-        for p in raw:
-            if p.get("name") == name:
-                p["archived"] = True
-                self._write_raw(raw)
-                return
-        msg = f"Project '{name}' not found in registry"
-        raise KeyError(msg)
+        with self._locked():
+            raw = self._read_raw()
+            for p in raw:
+                if p.get("name") == name:
+                    p["archived"] = True
+                    self._write_raw(raw)
+                    return
+            msg = f"Project '{name}' not found in registry"
+            raise KeyError(msg)
 
     def validate_all(self) -> list[RegistryIssue]:
         """Check all registered projects for issues."""
@@ -171,13 +191,7 @@ class ProjectRegistry:
         self._projects_file.parent.mkdir(parents=True, exist_ok=True)
         tmp = self._projects_file.with_suffix(".yaml.tmp")
         content = yaml.dump(data, default_flow_style=False)
-        with open(tmp, "w") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            try:
-                f.write(content)
-                f.flush()
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
+        tmp.write_text(content)
         tmp.replace(self._projects_file)
 
     @staticmethod

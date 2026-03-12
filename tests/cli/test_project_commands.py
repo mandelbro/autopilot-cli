@@ -169,6 +169,52 @@ class TestProjectConfigCommand:
             assert result.exit_code == 0
             assert "cfgproj2" in result.output
 
+    def test_config_set_key(self, tmp_path: Path) -> None:
+        gd = tmp_path / "global"
+        gd.mkdir()
+        registry = ProjectRegistry(global_dir=gd)
+        proj_dir = tmp_path / "setproj"
+        proj_dir.mkdir()
+        ap_dir = proj_dir / ".autopilot"
+        ap_dir.mkdir()
+        (ap_dir / "config.yaml").write_text(yaml.dump({"project": {"name": "setproj"}}))
+        registry.register("setproj", str(proj_dir), "python")
+
+        with (
+            patch(
+                "autopilot.cli.project.ProjectRegistry",
+                lambda: ProjectRegistry(global_dir=gd),
+            ),
+            patch("autopilot.cli.project._get_active_project", return_value="setproj"),
+        ):
+            result = runner.invoke(app, ["project", "config", "project.name", "renamed"])
+            assert result.exit_code == 0
+            data = yaml.safe_load((ap_dir / "config.yaml").read_text())
+            assert data["project"]["name"] == "renamed"
+
+    def test_config_set_nested_key(self, tmp_path: Path) -> None:
+        gd = tmp_path / "global"
+        gd.mkdir()
+        registry = ProjectRegistry(global_dir=gd)
+        proj_dir = tmp_path / "nestproj"
+        proj_dir.mkdir()
+        ap_dir = proj_dir / ".autopilot"
+        ap_dir.mkdir()
+        (ap_dir / "config.yaml").write_text(yaml.dump({"scheduler": {"interval": 30}}))
+        registry.register("nestproj", str(proj_dir), "python")
+
+        with (
+            patch(
+                "autopilot.cli.project.ProjectRegistry",
+                lambda: ProjectRegistry(global_dir=gd),
+            ),
+            patch("autopilot.cli.project._get_active_project", return_value="nestproj"),
+        ):
+            result = runner.invoke(app, ["project", "config", "scheduler.interval", "60"])
+            assert result.exit_code == 0
+            data = yaml.safe_load((ap_dir / "config.yaml").read_text())
+            assert data["scheduler"]["interval"] == "60"
+
     def test_config_no_active_project(self, tmp_path: Path) -> None:
         with patch("autopilot.cli.project._get_active_project", return_value=""):
             result = runner.invoke(app, ["project", "config"])

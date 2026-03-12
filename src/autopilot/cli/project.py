@@ -9,16 +9,13 @@ from rich.table import Table
 
 from autopilot.cli.display import console, format_status, notification
 from autopilot.core.project import ProjectRegistry, initialize_project
+from autopilot.utils.paths import get_global_dir
 
 project_app = typer.Typer(name="project", help="Project lifecycle management.")
-
-_ACTIVE_PROJECT_FILE = ".autopilot"
 
 
 def _get_active_project_path() -> Path:
     """Return the path to the active project marker file."""
-    from autopilot.utils.paths import get_global_dir
-
     return get_global_dir() / "active_project"
 
 
