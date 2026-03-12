@@ -1,17 +1,20 @@
 """Project lifecycle management (RFC Section 3.4.3, ADR-2, ADR-3).
 
-Handles project initialization: rendering Jinja2 templates from
-templates/{type}/ to {root}/.autopilot/, global registry, and
-SQLite registration.
+Handles project initialization, global registry CRUD, and
+SQLite registration. The ``ProjectRegistry`` class provides
+thread-safe access to ~/.autopilot/projects.yaml.
 """
 
 from __future__ import annotations
 
+import fcntl
 import logging
 import re
 import uuid
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -26,6 +29,10 @@ _TEMPLATES_DIR = Path(__file__).resolve().parents[3] / "templates"
 _GITIGNORE_CONTENT = "# Autopilot runtime state (not version controlled)\nstate/\nlogs/\n"
 
 
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
 @dataclass
 class ProjectInitResult:
     """Result of a project initialization."""
@@ -35,6 +42,169 @@ class ProjectInitResult:
     autopilot_dir: Path
     files_created: list[str] = field(default_factory=list)
     next_steps: list[str] = field(default_factory=list)
+
+
+@dataclass
+class RegisteredProject:
+    """A project entry in the global registry."""
+
+    name: str
+    path: str
+    type: str
+    registered_at: str = field(default_factory=lambda: _utc_now().isoformat())
+    last_active: str = ""
+    archived: bool = False
+
+
+@dataclass
+class RegistryIssue:
+    """An issue found during registry validation."""
+
+    project_name: str
+    issue: str
+
+
+class ProjectRegistry:
+    """CRUD operations for ~/.autopilot/projects.yaml (Task 012).
+
+    Uses file locking to handle concurrent access safely.
+    """
+
+    def __init__(self, global_dir: Path | None = None) -> None:
+        self._global_dir = global_dir or get_global_dir()
+        self._global_dir.mkdir(parents=True, exist_ok=True)
+        self._projects_file = self._global_dir / "projects.yaml"
+
+    def load(self) -> list[RegisteredProject]:
+        """Load all registered projects."""
+        raw = self._read_raw()
+        return [self._dict_to_project(p) for p in raw]
+
+    def register(
+        self, name: str, path: str, project_type: str
+    ) -> RegisteredProject:
+        """Register a new project. Raises ValueError on duplicate name."""
+        raw = self._read_raw()
+        for p in raw:
+            if p.get("name") == name:
+                msg = f"Project '{name}' is already registered"
+                raise ValueError(msg)
+
+        project = RegisteredProject(
+            name=name, path=path, type=project_type
+        )
+        raw.append(self._project_to_dict(project))
+        self._write_raw(raw)
+        return project
+
+    def unregister(self, name: str) -> None:
+        """Remove a project from the registry (does not delete files)."""
+        raw = self._read_raw()
+        filtered = [p for p in raw if p.get("name") != name]
+        if len(filtered) == len(raw):
+            msg = f"Project '{name}' not found in registry"
+            raise KeyError(msg)
+        self._write_raw(filtered)
+
+    def find_by_name(self, name: str) -> RegisteredProject | None:
+        """Find a project by name."""
+        for p in self._read_raw():
+            if p.get("name") == name:
+                return self._dict_to_project(p)
+        return None
+
+    def find_by_path(self, path: str) -> RegisteredProject | None:
+        """Find a project by path."""
+        resolved = str(Path(path).resolve())
+        for p in self._read_raw():
+            if str(Path(p.get("path", "")).resolve()) == resolved:
+                return self._dict_to_project(p)
+        return None
+
+    def update_last_active(self, name: str) -> None:
+        """Update the last_active timestamp for a project."""
+        raw = self._read_raw()
+        for p in raw:
+            if p.get("name") == name:
+                p["last_active"] = _utc_now().isoformat()
+                self._write_raw(raw)
+                return
+        msg = f"Project '{name}' not found in registry"
+        raise KeyError(msg)
+
+    def archive(self, name: str) -> None:
+        """Mark a project as archived."""
+        raw = self._read_raw()
+        for p in raw:
+            if p.get("name") == name:
+                p["archived"] = True
+                self._write_raw(raw)
+                return
+        msg = f"Project '{name}' not found in registry"
+        raise KeyError(msg)
+
+    def validate_all(self) -> list[RegistryIssue]:
+        """Check all registered projects for issues."""
+        issues: list[RegistryIssue] = []
+        for p in self._read_raw():
+            name = p.get("name", "<unknown>")
+            path = p.get("path", "")
+            if not path:
+                issues.append(RegistryIssue(name, "missing path"))
+                continue
+            path_obj = Path(path)
+            if not path_obj.exists():
+                issues.append(RegistryIssue(name, f"path does not exist: {path}"))
+            elif not (path_obj / ".autopilot").is_dir():
+                issues.append(RegistryIssue(name, f"no .autopilot/ directory at {path}"))
+        return issues
+
+    def _read_raw(self) -> list[dict[str, Any]]:
+        if not self._projects_file.exists():
+            return []
+        try:
+            data = yaml.safe_load(self._projects_file.read_text())
+        except yaml.YAMLError:
+            _log.warning("Corrupt projects.yaml, returning empty list")
+            return []
+        if isinstance(data, list):
+            return data
+        return []
+
+    def _write_raw(self, data: list[dict[str, Any]]) -> None:
+        self._projects_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self._projects_file.with_suffix(".yaml.tmp")
+        content = yaml.dump(data, default_flow_style=False)
+        with open(tmp, "w") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                f.write(content)
+                f.flush()
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+        tmp.replace(self._projects_file)
+
+    @staticmethod
+    def _dict_to_project(d: dict[str, str]) -> RegisteredProject:
+        return RegisteredProject(
+            name=d.get("name", ""),
+            path=d.get("path", ""),
+            type=d.get("type", ""),
+            registered_at=d.get("registered_at", ""),
+            last_active=d.get("last_active", ""),
+            archived=bool(d.get("archived", False)),
+        )
+
+    @staticmethod
+    def _project_to_dict(p: RegisteredProject) -> dict[str, Any]:
+        return {
+            "name": p.name,
+            "path": p.path,
+            "type": p.type,
+            "registered_at": p.registered_at,
+            "last_active": p.last_active,
+            "archived": p.archived,
+        }
 
 
 def initialize_project(
@@ -135,26 +305,19 @@ def _render_templates(
 
 def _register_global(*, name: str, path: str, project_type: str) -> None:
     """Register the project in ~/.autopilot/projects.yaml."""
-    global_dir = get_global_dir()
-    global_dir.mkdir(parents=True, exist_ok=True)
-    projects_file = global_dir / "projects.yaml"
-
-    projects: list[dict[str, str]] = []
-    if projects_file.exists():
-        data = yaml.safe_load(projects_file.read_text())
-        if isinstance(data, list):
-            projects = data
-
-    # Avoid duplicates
-    for p in projects:
-        if p.get("name") == name:
-            p["path"] = path
-            p["type"] = project_type
-            break
+    registry = ProjectRegistry()
+    existing = registry.find_by_name(name)
+    if existing is None:
+        registry.register(name, path, project_type)
     else:
-        projects.append({"name": name, "path": path, "type": project_type})
-
-    projects_file.write_text(yaml.dump(projects, default_flow_style=False))
+        # Update existing entry via raw rewrite (idempotent)
+        raw = registry._read_raw()
+        for p in raw:
+            if p.get("name") == name:
+                p["path"] = path
+                p["type"] = project_type
+                break
+        registry._write_raw(raw)
 
 
 def _register_sqlite(*, name: str, path: str, project_type: str) -> None:
