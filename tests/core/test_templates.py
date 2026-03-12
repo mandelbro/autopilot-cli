@@ -173,9 +173,7 @@ class TestTemplateValidation:
         pkg_dir = tmp_path / "pkg"
         tpl_dir = pkg_dir / "test"
         tpl_dir.mkdir(parents=True)
-        (tpl_dir / "_template.yaml").write_text(
-            yaml.dump({"expected_files": ["config.yaml"]})
-        )
+        (tpl_dir / "_template.yaml").write_text(yaml.dump({"expected_files": ["config.yaml"]}))
         (tpl_dir / "config.yaml").write_text("content")
 
         renderer = TemplateRenderer(
@@ -191,9 +189,7 @@ class TestTemplateValidation:
         pkg_dir = tmp_path / "pkg"
         tpl_dir = pkg_dir / "test"
         tpl_dir.mkdir(parents=True)
-        (tpl_dir / "_template.yaml").write_text(
-            yaml.dump({"expected_files": ["missing.txt"]})
-        )
+        (tpl_dir / "_template.yaml").write_text(yaml.dump({"expected_files": ["missing.txt"]}))
 
         renderer = TemplateRenderer(
             "test",
@@ -210,9 +206,7 @@ class TestTemplateValidation:
         pkg_dir = tmp_path / "pkg"
         tpl_dir = pkg_dir / "test"
         tpl_dir.mkdir(parents=True)
-        (tpl_dir / "_template.yaml").write_text(
-            yaml.dump({"expected_files": ["config.yaml"]})
-        )
+        (tpl_dir / "_template.yaml").write_text(yaml.dump({"expected_files": ["config.yaml"]}))
         (tpl_dir / "config.yaml.j2").write_text("content")
 
         renderer = TemplateRenderer(
