@@ -5,12 +5,13 @@ Manages broadcasts via announcements.md with active/archived sections.
 
 from __future__ import annotations
 
-import fcntl
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+
+from autopilot.coordination.utils import file_lock, write_atomic
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -120,7 +121,8 @@ class AnnouncementManager:
             self._append_entry(lines, a)
 
         self._board_dir.mkdir(parents=True, exist_ok=True)
-        self._write_locked(self._file, "\n".join(lines))
+        with file_lock(self._file):
+            write_atomic(self._file, "\n".join(lines))
 
     @staticmethod
     def _append_entry(lines: list[str], a: Announcement) -> None:
@@ -143,15 +145,3 @@ class AnnouncementManager:
             posted_at=d.get("posted_at", ""),
             archived=d.get("archived", "").lower() == "true",
         )
-
-    @staticmethod
-    def _write_locked(path: Path, content: str) -> None:
-        tmp = path.with_suffix(".md.tmp")
-        with open(tmp, "w") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            try:
-                f.write(content)
-                f.flush()
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
-        tmp.replace(path)

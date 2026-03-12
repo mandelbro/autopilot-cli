@@ -6,12 +6,14 @@ dated archive files when the log exceeds max_entries.
 
 from __future__ import annotations
 
-import fcntl
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
+
+from autopilot.coordination.utils import file_lock, write_atomic
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -152,32 +154,32 @@ class DecisionLog:
             lines.append(f"- **Action:** {d.action}")
             if d.rationale:
                 lines.append(f"- **Rationale:** {d.rationale}")
+            if d.context:
+                lines.append(f"- **Context:** {json.dumps(d.context)}")
             if d.outcome:
                 lines.append(f"- **Outcome:** {d.outcome}")
             lines.append("")
 
-        self._write_locked(path, "\n".join(lines))
+        with file_lock(path):
+            write_atomic(path, "\n".join(lines))
 
     @staticmethod
     def _dict_to_decision(d: dict[str, str]) -> Decision:
+        context: dict[str, Any] = {}
+        raw_context = d.get("context", "")
+        if raw_context:
+            try:
+                parsed = json.loads(raw_context)
+                if isinstance(parsed, dict):
+                    context = parsed
+            except json.JSONDecodeError:
+                pass
         return Decision(
             id=d.get("id", ""),
             timestamp=d.get("timestamp", ""),
             agent=d.get("agent", ""),
             action=d.get("action", ""),
             rationale=d.get("rationale", ""),
+            context=context,
             outcome=d.get("outcome", ""),
         )
-
-    @staticmethod
-    def _write_locked(path: Path, content: str) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".md.tmp")
-        with open(tmp, "w") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            try:
-                f.write(content)
-                f.flush()
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
-        tmp.replace(path)

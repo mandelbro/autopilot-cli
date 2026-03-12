@@ -94,3 +94,11 @@ class TestDecisionLog:
         log = DecisionLog(tmp_path)
         d = log.record("agent", "action", context={"key": "value"})
         assert d.context == {"key": "value"}
+
+    def test_context_persists_across_instances(self, tmp_path: Path) -> None:
+        log1 = DecisionLog(tmp_path)
+        log1.record("agent", "action", context={"env": "prod", "count": 42})
+        log2 = DecisionLog(tmp_path)
+        recent = log2.list_recent()
+        assert len(recent) == 1
+        assert recent[0].context == {"env": "prod", "count": 42}

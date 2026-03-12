@@ -6,10 +6,11 @@ blockers, and sprint progress with thread-safe file access.
 
 from __future__ import annotations
 
-import fcntl
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from autopilot.coordination.utils import file_lock, write_atomic
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -126,7 +127,8 @@ class BoardManager:
             lines.append("")
 
         self._board_dir.mkdir(parents=True, exist_ok=True)
-        self._write_locked(self._board_file, "\n".join(lines))
+        with file_lock(self._board_file):
+            write_atomic(self._board_file, "\n".join(lines))
 
     @staticmethod
     def _parse_sections(content: str) -> dict[str, str]:
@@ -148,16 +150,3 @@ class BoardManager:
             sections[current_section] = "\n".join(current_lines).strip()
 
         return sections
-
-    @staticmethod
-    def _write_locked(path: Path, content: str) -> None:
-        """Write content to file with exclusive locking."""
-        tmp = path.with_suffix(".md.tmp")
-        with open(tmp, "w") as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            try:
-                f.write(content)
-                f.flush()
-            finally:
-                fcntl.flock(f, fcntl.LOCK_UN)
-        tmp.replace(path)
