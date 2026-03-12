@@ -89,7 +89,12 @@ class PidFile:
                 return False
             # The other writer died; retry once
             self.path.unlink(missing_ok=True)
-            self.path.write_text(str(pid))
+            try:
+                fd = os.open(str(self.path), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+                os.write(fd, str(pid).encode())
+                os.close(fd)
+            except FileExistsError:
+                return False  # lost the second race; another live process owns it
         return True
 
     def release(self) -> None:
