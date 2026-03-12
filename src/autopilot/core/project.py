@@ -80,9 +80,7 @@ class ProjectRegistry:
         raw = self._read_raw()
         return [self._dict_to_project(p) for p in raw]
 
-    def register(
-        self, name: str, path: str, project_type: str
-    ) -> RegisteredProject:
+    def register(self, name: str, path: str, project_type: str) -> RegisteredProject:
         """Register a new project. Raises ValueError on duplicate name."""
         raw = self._read_raw()
         for p in raw:
@@ -90,9 +88,7 @@ class ProjectRegistry:
                 msg = f"Project '{name}' is already registered"
                 raise ValueError(msg)
 
-        project = RegisteredProject(
-            name=name, path=path, type=project_type
-        )
+        project = RegisteredProject(name=name, path=path, type=project_type)
         raw.append(self._project_to_dict(project))
         self._write_raw(raw)
         return project
