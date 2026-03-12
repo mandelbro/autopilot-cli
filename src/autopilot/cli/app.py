@@ -61,7 +61,11 @@ def main(
 ) -> None:
     """Autopilot CLI - autonomous development orchestrator."""
     if ctx.invoked_subcommand is None:
-        typer.echo("REPL mode not yet implemented. Use --help for available commands.")
+        from autopilot.cli.repl import AutopilotREPL
+        from autopilot.utils.paths import get_global_dir
+
+        repl = AutopilotREPL(history_path=get_global_dir() / "repl_history")
+        repl.run()
         raise typer.Exit()
 
 
