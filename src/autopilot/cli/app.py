@@ -93,10 +93,127 @@ def init(
     run_init(name=name, project_type=project_type, root=root)
 
 
+def _resolve_project(project: str = "") -> tuple:
+    """Resolve autopilot dir and project name. Returns (ap_dir, project_name).
+
+    Raises typer.Exit(1) if no .autopilot directory is found.
+    """
+    from autopilot.cli.display import console
+    from autopilot.utils.paths import find_autopilot_dir
+
+    ap_dir = find_autopilot_dir()
+    if ap_dir is None:
+        console.print("[error]No .autopilot directory found. Run 'autopilot init' first.[/error]")
+        raise typer.Exit(code=1)
+    project_name = project or ap_dir.parent.name
+    return ap_dir, project_name
+
+
+def _build_scheduler(ap_dir, project_name: str):
+    """Build Scheduler with all dependencies from an autopilot directory.
+
+    Returns (config, scheduler).
+    """
+    from autopilot.core.config import AutopilotConfig, ProjectConfig
+    from autopilot.orchestration.agent_invoker import AgentInvoker
+    from autopilot.orchestration.scheduler import Scheduler
+    from autopilot.orchestration.usage import UsageTracker
+    from autopilot.utils.db import Database
+
+    config = AutopilotConfig(project=ProjectConfig(name=project_name))
+    state_dir = ap_dir / "state"
+    db = Database(ap_dir / "autopilot.db")
+    usage = UsageTracker(db=db, config=config)
+    invoker = AgentInvoker(registry=None, config=config)  # type: ignore[arg-type]
+    scheduler = Scheduler(
+        config=config,
+        invoker=invoker,
+        usage_tracker=usage,
+        lock_dir=state_dir,
+        cwd=ap_dir.parent,
+    )
+    return config, scheduler
+
+
 @app.command()
-def watch() -> None:
+def start(
+    project: str = typer.Option("", "--project", "-p", help="Project name."),
+) -> None:
+    """Start an autonomous session (alias for ``session start``)."""
+    from autopilot.cli.display import console
+    from autopilot.orchestration.daemon import Daemon
+
+    ap_dir, project_name = _resolve_project(project)
+    config, scheduler = _build_scheduler(ap_dir, project_name)
+
+    daemon = Daemon(
+        config=config,
+        scheduler=scheduler,
+        state_dir=ap_dir / "state",
+        log_dir=ap_dir / "logs",
+    )
+
+    console.print(f"Starting session for project [bold]{project_name}[/bold]...")
+    try:
+        daemon.start()
+    except RuntimeError as exc:
+        console.print(f"[error]{exc}[/error]")
+        raise typer.Exit(code=1) from None
+
+
+@app.command()
+def stop(
+    project: str = typer.Option("", "--project", "-p", help="Project name."),
+) -> None:
+    """Stop the running session (alias for ``session stop``)."""
+    from autopilot.cli.display import console
+    from autopilot.orchestration.daemon import stop_daemon
+
+    ap_dir, _project_name = _resolve_project(project)
+    state_dir = ap_dir / "state"
+    if stop_daemon(state_dir):
+        console.print("[success]Session daemon stopped.[/success]")
+    else:
+        console.print("[warning]No running daemon found.[/warning]")
+
+
+@app.command()
+def cycle(
+    project: str = typer.Option("", "--project", "-p", help="Project name."),
+) -> None:
+    """Run a single scheduler cycle inline (no daemon)."""
+    from autopilot.cli.display import console
+    from autopilot.orchestration.scheduler import SchedulerError
+
+    ap_dir, project_name = _resolve_project(project)
+    _config, scheduler = _build_scheduler(ap_dir, project_name)
+
+    console.print(f"Running single cycle for [bold]{project_name}[/bold]...")
+    try:
+        from autopilot.orchestration.dispatcher import parse_dispatch_plan
+
+        plan = parse_dispatch_plan("{}")
+        result = scheduler.run_cycle(plan)
+        console.print(
+            f"[success]Cycle {result.id[:8]} completed: "
+            f"{result.dispatches_succeeded}/{result.dispatches_planned} succeeded[/success]"
+        )
+    except SchedulerError as exc:
+        console.print(f"[error]Cycle failed: {exc}[/error]")
+        raise typer.Exit(code=1) from None
+
+
+@app.command()
+def watch(
+    project: str = typer.Option("", "--project", "-p", help="Project name."),
+) -> None:
     """Watch mode with live dashboard."""
-    typer.echo("Not yet implemented: watch")
+    from autopilot.cli.display import ProjectState, console, render_dashboard
+
+    ap_dir, project_name = _resolve_project(project)
+    state = ProjectState(name=project_name, status="watching")
+    output = render_dashboard(state)
+    console.print(output)
 
 
 @app.command()
