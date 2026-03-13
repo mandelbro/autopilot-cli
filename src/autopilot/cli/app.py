@@ -10,6 +10,7 @@ import typer
 
 from autopilot import __version__
 from autopilot.cli.project import project_app
+from autopilot.cli.task import register_task_commands
 
 app = typer.Typer(
     name="autopilot",
@@ -114,19 +115,11 @@ def migrate() -> None:
     typer.echo("Not yet implemented: migrate")
 
 
+# -- Task commands (registered from task module) -----------------------------
+
+register_task_commands(task_app)
+
 # -- Stub subcommands for Phase 2+ -------------------------------------------
-
-
-@task_app.command("list")
-def task_list() -> None:
-    """List tasks in the current sprint."""
-    typer.echo("Not yet implemented: task list")
-
-
-@task_app.command("board")
-def task_board() -> None:
-    """Display the task board."""
-    typer.echo("Not yet implemented: task board")
 
 
 @session_app.command("start")
