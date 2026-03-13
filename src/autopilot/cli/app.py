@@ -10,6 +10,7 @@ import typer
 
 from autopilot import __version__
 from autopilot.cli.project import project_app
+from autopilot.cli.session import register_session_commands
 from autopilot.cli.sprint import register_sprint_commands
 from autopilot.cli.task import register_task_commands
 
@@ -126,25 +127,11 @@ sprint_sub = typer.Typer(name="sprint", help="Sprint planning and lifecycle.")
 task_app.add_typer(sprint_sub)
 register_sprint_commands(sprint_sub)
 
+# -- Session commands (registered from session module) -------------------------
+
+register_session_commands(session_app)
+
 # -- Stub subcommands for Phase 2+ -------------------------------------------
-
-
-@session_app.command("start")
-def session_start() -> None:
-    """Start a new session."""
-    typer.echo("Not yet implemented: session start")
-
-
-@session_app.command("stop")
-def session_stop() -> None:
-    """Stop the current session."""
-    typer.echo("Not yet implemented: session stop")
-
-
-@session_app.command("list")
-def session_list() -> None:
-    """List sessions."""
-    typer.echo("Not yet implemented: session list")
 
 
 @enforce_app.command("run")

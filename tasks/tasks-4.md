@@ -397,7 +397,7 @@
 
 - **Title**: Session CLI commands (start, stop, list, attach, logs)
 - **File**: src/autopilot/cli/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want to manage autonomous sessions from the CLI, so that I can start daemons, monitor progress, and review logs without leaving the terminal.
