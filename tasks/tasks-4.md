@@ -154,7 +154,7 @@
 
 - **Title**: Usage tracking with per-project limits
 - **File**: src/autopilot/orchestration/usage.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want usage tracking against Claude Max plan limits, so that autonomous execution stays within daily and weekly cycle budgets.
@@ -349,7 +349,7 @@
 
 - **Title**: Session management data model and CRUD
 - **File**: src/autopilot/core/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want to track all autonomous sessions, so that I can monitor running work, review history, and debug issues.
@@ -443,7 +443,7 @@
 
 - **Title**: Cycle reports generator
 - **File**: src/autopilot/reporting/cycle_reports.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want per-cycle markdown reports, so that I can review what each autonomous cycle accomplished, which agents ran, and what issues occurred.
