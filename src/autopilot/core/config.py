@@ -120,6 +120,17 @@ class GitConfig(BaseModel):
     branch_strategy: Literal["batch", "per-task"] = "batch"
 
 
+class MonitoredServiceConfig(BaseModel):
+    """Per-service monitoring configuration with health endpoints."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str = ""
+    name: str = ""
+    health_endpoints: list[str] = Field(default_factory=list)
+    staging_url: str = ""
+
+
 class RenderServiceConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -128,12 +139,29 @@ class RenderServiceConfig(BaseModel):
     deploy_timeout_seconds: int = Field(default=600, gt=0)
 
 
+class GitHubIssuesConfig(BaseModel):
+    """GitHub issue creation settings for deploy failures."""
+
+    model_config = ConfigDict(frozen=True)
+
+    create_on_failure: bool = True
+    labels: list[str] = Field(
+        default_factory=lambda: ["deploy-failure", "autopilot"]
+    )
+
+
 class DeploymentMonitoringConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     enabled: bool = False
+    check_frequency: Literal["every_cycle", "every_nth_cycle", "manual_only"] = (
+        "every_cycle"
+    )
+    health_check_timeout_seconds: int = Field(default=10, gt=0)
+    failure_patterns: dict[str, str] = Field(default_factory=dict)
+    github_issues: GitHubIssuesConfig = Field(default_factory=GitHubIssuesConfig)
     render: RenderServiceConfig = Field(default_factory=RenderServiceConfig)
-    health_check_interval_seconds: int = Field(default=300, gt=0)
+    services: dict[str, MonitoredServiceConfig] = Field(default_factory=dict)
 
 
 class AutopilotConfig(BaseModel):

@@ -14,7 +14,7 @@
 
 - **Title**: DevOps Agent system prompt
 - **File**: templates/python/agents/devops-agent.md
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a PL agent, I want a DevOps Agent that monitors deployment health, so that deploy failures are detected and routed to remediation within one cycle.
@@ -58,7 +58,7 @@
 
 - **Title**: Render service registry in config model
 - **File**: src/autopilot/core/config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a system operator, I want to configure monitored services in the project config, so that the DA knows which services to check and where their health endpoints are.
@@ -99,7 +99,7 @@
 
 - **Title**: Health checker and deploy status writer
 - **File**: src/autopilot/monitoring/health_checker.py, src/autopilot/monitoring/deploy_status.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a DA agent, I want to check service health endpoints and write deployment status to the project board, so that the PL can gate feature verification on deployment health.
@@ -148,7 +148,7 @@
 
 - **Title**: Failure pattern catalog and remediation routing
 - **File**: src/autopilot/monitoring/failure_patterns.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a DA agent, I want to classify deployment failures and route them to appropriate remediation, so that code issues trigger EM fixes and infrastructure issues trigger human escalation.
@@ -194,7 +194,7 @@
 
 - **Title**: GitHub issue creation for deploy failures
 - **File**: src/autopilot/monitoring/render_registry.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want automated GitHub issues for deploy failures, so that infrastructure problems are tracked with full diagnostic context.
