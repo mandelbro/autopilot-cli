@@ -39,6 +39,7 @@ class TestInitializeProject:
             "engineering-manager.md",
             "technical-architect.md",
             "product-director.md",
+            "devops-agent.md",
         }
         actual = {f.name for f in agents_dir.iterdir() if f.suffix == ".md"}
         assert expected == actual

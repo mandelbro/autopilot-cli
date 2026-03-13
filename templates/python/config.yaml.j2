@@ -78,8 +78,16 @@ git:
 
 deployment_monitoring:
   enabled: false
+  check_frequency: "every_cycle"
+  health_check_timeout_seconds: 10
+  failure_patterns: {}
+  github_issues:
+    create_on_failure: true
+    labels:
+      - deploy-failure
+      - autopilot
   render:
     api_key_env: "RENDER_API_KEY"
     poll_interval_seconds: 60
     deploy_timeout_seconds: 600
-  health_check_interval_seconds: 300
+  services: {}
