@@ -201,7 +201,7 @@
 
 - **Title**: Scheduler core -- cycle orchestration
 - **File**: src/autopilot/orchestration/scheduler.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 8
 
 - **User Story (business-facing)**: As a technical architect, I want a reliable cycle orchestrator, so that autonomous development runs in structured plan-execute-report cycles with proper locking and error recovery.
