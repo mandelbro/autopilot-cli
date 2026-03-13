@@ -135,12 +135,12 @@ class DecisionLogReporter:
 
     def _all_decisions(self) -> list[Decision]:
         """Load all decisions from current log and archives."""
-        decisions = self._log._load()  # noqa: SLF001
+        decisions = self._log.list_all()
 
         archive_dir = self._board_dir / "decision-log-archive"
         if archive_dir.exists():
             for archive_file in sorted(archive_dir.glob("decision-log-*.md")):
-                archived = self._log._load_from(archive_file)  # noqa: SLF001
+                archived = self._log.load_from_file(archive_file)
                 decisions = archived + decisions
 
         return decisions

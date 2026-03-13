@@ -116,6 +116,12 @@ class TestGenerate:
 |-------|--------|--------|----------|
 | coder | write | pass | 10.0s |
 | tester | test | FAIL | 5.0s |
+
+## Errors
+
+### tester
+- **Action**: test
+- **Error**: assertion failed in test_foo
 """
         (reports_dir / "cycle-2026-03-13-001.md").write_text(report_content)
 
@@ -124,6 +130,45 @@ class TestGenerate:
         assert "Daily Summary: 2026-03-13" in result
         assert "Cycles: 1" in result
         assert "coder" in result
+
+    def test_generate_parses_errors_from_file(
+        self, tmp_path, generator: DailySummaryGenerator
+    ) -> None:
+        """Errors section is parsed so notable_errors is populated."""
+        reports_dir = tmp_path / ".autopilot" / "board" / "cycle-reports"
+        reports_dir.mkdir(parents=True)
+
+        report_content = """# Cycle Report: cycle-002
+
+- **Project**: myproject
+- **Status**: PARTIAL
+- **Started**: 2026-03-13T12:00:00+00:00
+- **Duration**: 60.0s
+
+## Dispatches
+
+| Agent | Action | Status | Duration |
+|-------|--------|--------|----------|
+| coder | build | FAIL | 30.0s |
+
+## Errors
+
+### coder
+- **Action**: build
+- **Error**: compilation failed
+"""
+        (reports_dir / "cycle-2026-03-13-001.md").write_text(report_content)
+
+        reports = generator._load_cycle_reports_for_date(tmp_path, date(2026, 3, 13))
+        assert len(reports) == 1
+        # The failed dispatch should carry the error from the Errors section
+        failed = [d for d in reports[0].dispatches if d.status != "success"]
+        assert len(failed) == 1
+        assert failed[0].error == "compilation failed"
+
+        summary = generator.aggregate(reports)
+        assert len(summary.notable_errors) == 1
+        assert "compilation failed" in summary.notable_errors[0]
 
     def test_generate_no_reports(self, tmp_path, generator: DailySummaryGenerator) -> None:
         result = generator.generate(tmp_path, date(2026, 3, 13))

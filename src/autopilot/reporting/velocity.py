@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 _ROLLING_WINDOW = 5
 _MIN_SPRINTS_FOR_FORECAST = 3
+_SPRINT_DURATION_WEEKS = 2
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,7 @@ class VelocityReporter:
         self._project_id = project_id
 
     def sprint_history(self, limit: int = 10) -> list[SprintSummary]:
-        """Return sprint summaries from SQLite, most recent first."""
+        """Return up to *limit* most recent sprint summaries, oldest first."""
         from autopilot.core.sprint import VelocityTracker
 
         tracker = VelocityTracker(self._db, self._project_id)
@@ -145,8 +146,7 @@ class VelocityReporter:
             min_sprints = estimated_sprints
             max_sprints = estimated_sprints
 
-        # Estimate date assuming 2-week sprints
-        estimated_date = date.today() + timedelta(weeks=estimated_sprints * 2)
+        estimated_date = date.today() + timedelta(weeks=estimated_sprints * _SPRINT_DURATION_WEEKS)
 
         return CompletionForecast(
             estimated_sprints=estimated_sprints,

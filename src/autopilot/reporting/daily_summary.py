@@ -40,11 +40,13 @@ class DailySummaryGenerator:
     def __init__(self, reports_dir: Path) -> None:
         self._reports_dir = reports_dir
 
-    def aggregate(self, cycle_reports: list[CycleReportData]) -> DailySummary:
+    def aggregate(
+        self, cycle_reports: list[CycleReportData], *, target_date: date | None = None
+    ) -> DailySummary:
         """Aggregate cycle report data into a DailySummary."""
         if not cycle_reports:
             return DailySummary(
-                date=date.today(),
+                date=target_date or date.today(),
                 cycles_run=0,
                 total_dispatches=0,
                 succeeded=0,
@@ -97,7 +99,7 @@ class DailySummaryGenerator:
         Scans cycle report files for the given date and aggregates them.
         """
         reports = self._load_cycle_reports_for_date(project_dir, target_date)
-        summary = self.aggregate(reports)
+        summary = self.aggregate(reports, target_date=target_date)
         return self._render(summary)
 
     def _load_cycle_reports_for_date(
@@ -146,6 +148,10 @@ class DailySummaryGenerator:
         dispatches: list[DispatchOutcome] = []
 
         in_dispatches_table = False
+        in_errors_section = False
+        error_agent = ""
+        errors_by_agent: dict[str, str] = {}
+
         for line in lines:
             stripped = line.strip()
             if stripped.startswith("# Cycle Report:"):
@@ -166,8 +172,19 @@ class DailySummaryGenerator:
                 raw_dur = stripped.split(":", 1)[1].strip().rstrip("s")
                 with contextlib.suppress(ValueError):
                     duration_seconds = float(raw_dur)
-            elif stripped.startswith("## Dispatches"):
+            elif stripped == "## Dispatches" or stripped.startswith("## Dispatches "):
                 in_dispatches_table = True
+                in_errors_section = False
+            elif stripped == "## Errors" or stripped.startswith("## Errors "):
+                in_dispatches_table = False
+                in_errors_section = True
+            elif (
+                stripped.startswith("## ")
+                and not stripped.startswith("## Dispatches")
+                and not stripped.startswith("## Errors")
+            ):
+                in_dispatches_table = False
+                in_errors_section = False
             elif (
                 in_dispatches_table and stripped.startswith("|") and not stripped.startswith("|--")
             ):
@@ -188,8 +205,31 @@ class DailySummaryGenerator:
                             duration_seconds=d_dur,
                         )
                     )
-            elif in_dispatches_table and stripped.startswith("##"):
-                in_dispatches_table = False
+            elif in_errors_section:
+                if stripped.startswith("### "):
+                    error_agent = stripped[4:].strip()
+                elif stripped.startswith("- **Error**:"):
+                    error_msg = stripped.split(":", 1)[1].strip()
+                    if error_agent:
+                        errors_by_agent[error_agent] = error_msg
+
+        # Attach errors to dispatches
+        if errors_by_agent:
+            enriched: list[DispatchOutcome] = []
+            for d in dispatches:
+                if d.agent in errors_by_agent and d.status != "success":
+                    enriched.append(
+                        DispatchOutcome(
+                            agent=d.agent,
+                            action=d.action,
+                            status=d.status,
+                            duration_seconds=d.duration_seconds,
+                            error=errors_by_agent[d.agent],
+                        )
+                    )
+                else:
+                    enriched.append(d)
+            dispatches = enriched
 
         return CycleReportData(
             cycle_id=cycle_id,
