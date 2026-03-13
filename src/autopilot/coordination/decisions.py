@@ -68,6 +68,10 @@ class DecisionLog:
         self._save(decisions)
         return decision
 
+    def list_all(self) -> list[Decision]:
+        """Return all decisions from the current log file."""
+        return self._load()
+
     def list_recent(self, limit: int = 10) -> list[Decision]:
         """Return the most recent decisions."""
         decisions = self._load()
@@ -98,6 +102,10 @@ class DecisionLog:
 
         self._save(to_keep)
         return len(to_archive)
+
+    def load_from_file(self, path: Path) -> list[Decision]:
+        """Load decisions from an arbitrary log file (e.g. archives)."""
+        return self._load_from(path)
 
     def search(self, query: str) -> list[Decision]:
         """Search decisions by keyword in agent, action, or rationale."""
