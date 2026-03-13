@@ -10,6 +10,7 @@ import typer
 
 from autopilot import __version__
 from autopilot.cli.project import project_app
+from autopilot.cli.sprint import register_sprint_commands
 from autopilot.cli.task import register_task_commands
 
 app = typer.Typer(
@@ -118,6 +119,12 @@ def migrate() -> None:
 # -- Task commands (registered from task module) -----------------------------
 
 register_task_commands(task_app)
+
+# -- Sprint subcommands under task -------------------------------------------
+
+sprint_sub = typer.Typer(name="sprint", help="Sprint planning and lifecycle.")
+task_app.add_typer(sprint_sub)
+register_sprint_commands(sprint_sub)
 
 # -- Stub subcommands for Phase 2+ -------------------------------------------
 
