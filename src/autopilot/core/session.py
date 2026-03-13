@@ -158,15 +158,9 @@ class SessionManager:
             status=SessionStatus(str(r["status"])),
             pid=int(str(r["pid"])) if r.get("pid") is not None else None,
             started_at=(
-                datetime.fromisoformat(str(started_at_raw))
-                if started_at_raw
-                else datetime.now(UTC)
+                datetime.fromisoformat(str(started_at_raw)) if started_at_raw else datetime.now(UTC)
             ),
-            ended_at=(
-                datetime.fromisoformat(str(ended_at_raw))
-                if ended_at_raw
-                else None
-            ),
+            ended_at=(datetime.fromisoformat(str(ended_at_raw)) if ended_at_raw else None),
             agent_name=str(r["agent_name"]) if r.get("agent_name") else None,
             cycle_id=str(r["cycle_id"]) if r.get("cycle_id") else None,
         )
