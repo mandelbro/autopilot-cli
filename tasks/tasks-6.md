@@ -238,7 +238,7 @@
 
 - **Title**: Enforcement engine orchestrator
 - **File**: src/autopilot/enforcement/engine.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want a unified enforcement engine, so that all 5 enforcement layers are coordinated from a single interface for setup, checking, and reporting.
@@ -286,7 +286,7 @@
 
 - **Title**: Enforcement rules -- base protocol and Categories 1-3
 - **File**: src/autopilot/enforcement/rules/base.py, rules/duplication.py, rules/conventions.py, rules/overengineering.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a code quality enforcer, I want rules for infrastructure duplication, convention violations, and over-engineering, so that the three most common AI anti-patterns are automatically detected.
@@ -334,7 +334,7 @@
 
 - **Title**: Enforcement rules Categories 4-7
 - **File**: src/autopilot/enforcement/rules/security.py, error_handling.py, dead_code.py, type_safety.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a code quality enforcer, I want rules for security, error handling, dead code, and type safety, so that critical vulnerability patterns and code hygiene issues are caught automatically.
@@ -380,7 +380,7 @@
 
 - **Title**: Enforcement rules Categories 8-11
 - **File**: src/autopilot/enforcement/rules/test_quality.py, comments.py, deprecated.py, async_misuse.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a code quality enforcer, I want rules for test anti-patterns, excessive comments, deprecated APIs, and async misuse, so that all 11 anti-pattern categories are covered.
@@ -424,7 +424,7 @@
 
 - **Title**: Layer 1 -- Editor-time configuration generation
 - **File**: src/autopilot/enforcement/editor_config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a developer, I want enforcement rules baked into my editor config, so that anti-patterns are flagged in real-time as I type, not just at commit time.
