@@ -62,7 +62,7 @@
 
 - **Title**: Interactive task creation command
 - **File**: src/autopilot/cli/task.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want to create tasks interactively, so that I can quickly add new work items with proper structure and estimation.
@@ -110,7 +110,7 @@
 
 - **Title**: Task list command with Rich display
 - **File**: src/autopilot/cli/task.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want to view my task board with filtering and status colors, so that I can quickly assess project progress and find the next work item.
