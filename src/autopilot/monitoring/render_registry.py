@@ -36,9 +36,7 @@ class GitHubIssueCreator:
         cwd: Working directory for ``gh`` commands.
     """
 
-    labels: list[str] = field(
-        default_factory=lambda: ["deploy-failure", "autopilot"]
-    )
+    labels: list[str] = field(default_factory=lambda: ["deploy-failure", "autopilot"])
     cwd: Path | None = None
     _runner: object | None = field(default=None, repr=False)
 
@@ -55,9 +53,7 @@ class GitHubIssueCreator:
         if self._has_duplicate(failure.pattern_name, context.service_name):
             return ""
 
-        title = (
-            f"Deploy failure: {context.service_name} — {failure.pattern_name}"
-        )
+        title = f"Deploy failure: {context.service_name} — {failure.pattern_name}"
         body = self._build_body(failure, context)
         label_str = ",".join(self.labels)
 
@@ -111,10 +107,14 @@ class GitHubIssueCreator:
             f"**Timestamp**: {context.deploy_timestamp}",
             "",
             "## Error Output",
-            f"```\n{context.error_output}\n```" if context.error_output else "_No error output captured._",
+            f"```\n{context.error_output}\n```"
+            if context.error_output
+            else "_No error output captured._",
             "",
             "## Recent Commits",
-            f"```\n{context.recent_commits}\n```" if context.recent_commits else "_No commit data._",
+            f"```\n{context.recent_commits}\n```"
+            if context.recent_commits
+            else "_No commit data._",
             "",
             "## Remediation Suggestion",
             context.remediation_suggestion or "_See failure pattern documentation._",

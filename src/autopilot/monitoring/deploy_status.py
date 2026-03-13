@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 class DeployStatusWriter:
     """Writes health check results to the board's Deployment Status section."""
 
-    def update_board(
-        self, board_path: Path, results: list[HealthCheckResult]
-    ) -> None:
+    def update_board(self, board_path: Path, results: list[HealthCheckResult]) -> None:
         """Update the Deployment Status section in project-board.md.
 
         If the board file does not exist it is created with only the
@@ -55,9 +53,7 @@ class DeployStatusWriter:
             status = "healthy" if all_healthy else "unhealthy"
             endpoints = ", ".join(r.endpoint for r in svc_results)
             notes = "; ".join(r.error for r in svc_results if r.error)
-            lines.append(
-                f"| {svc_name} | {status} | {now} | {endpoints} | {notes} |"
-            )
+            lines.append(f"| {svc_name} | {status} | {now} | {endpoints} | {notes} |")
 
         return "\n".join(lines)
 

@@ -38,18 +38,14 @@ class HealthChecker:
     def __init__(self, timeout: int = 10) -> None:
         self._timeout = timeout
 
-    def check_service(
-        self, service: MonitoredServiceConfig
-    ) -> list[HealthCheckResult]:
+    def check_service(self, service: MonitoredServiceConfig) -> list[HealthCheckResult]:
         """Check all health endpoints for a single service."""
         results: list[HealthCheckResult] = []
         for endpoint in service.health_endpoints:
             results.append(self._check_endpoint(service.name, endpoint))
         return results
 
-    def check_all(
-        self, services: dict[str, MonitoredServiceConfig]
-    ) -> list[HealthCheckResult]:
+    def check_all(self, services: dict[str, MonitoredServiceConfig]) -> list[HealthCheckResult]:
         """Check all endpoints across all monitored services."""
         results: list[HealthCheckResult] = []
         for service in services.values():

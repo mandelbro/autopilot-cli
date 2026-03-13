@@ -96,9 +96,7 @@ class TestFailureClassifierCustomPatterns:
         assert result.confidence == 0.7
 
     def test_builtin_takes_precedence_over_custom(self) -> None:
-        classifier = FailureClassifier(
-            custom_patterns={"my_import": r"ImportError"}
-        )
+        classifier = FailureClassifier(custom_patterns={"my_import": r"ImportError"})
         result = classifier.classify("ImportError: no module named 'x'")
         assert result.pattern_name == "broken_imports"
 

@@ -134,16 +134,12 @@ class FailureClassifier:
             confidence=0.0,
         )
 
-    def route_remediation(
-        self, classification: FailureClassification
-    ) -> RemediationAction:
+    def route_remediation(self, classification: FailureClassification) -> RemediationAction:
         """Return the remediation action for a classification."""
         return classification.remediation
 
     @staticmethod
-    def _match_pattern(
-        text: str, patterns: tuple[str, ...]
-    ) -> str:
+    def _match_pattern(text: str, patterns: tuple[str, ...]) -> str:
         """Try each regex in *patterns* against *text*, return first match or ""."""
         for regex in patterns:
             match = re.search(regex, text)

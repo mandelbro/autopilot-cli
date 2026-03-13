@@ -58,9 +58,7 @@ class TestGitHubIssueCreator:
                 _gh_result(stdout="[]"),
                 _gh_result(stdout="https://github.com/org/repo/issues/42\n"),
             ]
-            url = creator.create_deploy_failure_issue(
-                _make_failure(), _make_context()
-            )
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
 
         assert url == "https://github.com/org/repo/issues/42"
         assert mock_gh.call_count == 2
@@ -69,12 +67,8 @@ class TestGitHubIssueCreator:
         creator = GitHubIssueCreator()
 
         with patch.object(creator, "_run_gh") as mock_gh:
-            mock_gh.return_value = _gh_result(
-                stdout='[{"number": 10}]'
-            )
-            url = creator.create_deploy_failure_issue(
-                _make_failure(), _make_context()
-            )
+            mock_gh.return_value = _gh_result(stdout='[{"number": 10}]')
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
 
         assert url == ""
         assert mock_gh.call_count == 1
@@ -87,9 +81,7 @@ class TestGitHubIssueCreator:
                 _gh_result(stdout="[]"),
                 _gh_result(returncode=1, stderr="gh: not authenticated"),
             ]
-            url = creator.create_deploy_failure_issue(
-                _make_failure(), _make_context()
-            )
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
 
         assert url == ""
 
@@ -101,9 +93,7 @@ class TestGitHubIssueCreator:
                 _gh_result(returncode=1),
                 _gh_result(stdout="https://github.com/org/repo/issues/99\n"),
             ]
-            url = creator.create_deploy_failure_issue(
-                _make_failure(), _make_context()
-            )
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
 
         assert url == "https://github.com/org/repo/issues/99"
 
@@ -115,9 +105,7 @@ class TestGitHubIssueCreator:
                 _gh_result(stdout="[]"),
                 _gh_result(stdout="https://github.com/org/repo/issues/1\n"),
             ]
-            creator.create_deploy_failure_issue(
-                _make_failure(), _make_context()
-            )
+            creator.create_deploy_failure_issue(_make_failure(), _make_context())
 
         create_call = mock_gh.call_args_list[1]
         args = create_call[0]
@@ -127,15 +115,11 @@ class TestGitHubIssueCreator:
 
 class TestIssueBody:
     def test_body_contains_service_name(self) -> None:
-        body = GitHubIssueCreator._build_body(
-            _make_failure(), _make_context("web-api")
-        )
+        body = GitHubIssueCreator._build_body(_make_failure(), _make_context("web-api"))
         assert "web-api" in body
 
     def test_body_contains_failure_type(self) -> None:
-        body = GitHubIssueCreator._build_body(
-            _make_failure("crash_loop"), _make_context()
-        )
+        body = GitHubIssueCreator._build_body(_make_failure("crash_loop"), _make_context())
         assert "crash_loop" in body
 
     def test_body_contains_error_output(self) -> None:

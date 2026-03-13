@@ -36,9 +36,7 @@ class TestHealthCheckResult:
 
 class TestHealthCheckerInterface:
     def test_check_service_returns_list(self) -> None:
-        svc = MonitoredServiceConfig(
-            id="svc-1", name="api", health_endpoints=[], staging_url=""
-        )
+        svc = MonitoredServiceConfig(id="svc-1", name="api", health_endpoints=[], staging_url="")
         checker = HealthChecker(timeout=5)
         results = checker.check_service(svc)
         assert isinstance(results, list)

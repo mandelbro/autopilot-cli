@@ -286,9 +286,7 @@ class TestDeploymentMonitoringConfig:
         assert cfg.services["api"].name == "api"
 
     def test_with_failure_patterns(self) -> None:
-        cfg = DeploymentMonitoringConfig(
-            failure_patterns={"db_error": r"database.*timeout"}
-        )
+        cfg = DeploymentMonitoringConfig(failure_patterns={"db_error": r"database.*timeout"})
         assert "db_error" in cfg.failure_patterns
 
     def test_yaml_round_trip(self, tmp_path: Path) -> None:

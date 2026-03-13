@@ -11,7 +11,9 @@ from autopilot.monitoring.deploy_status import DeployStatusWriter
 from autopilot.monitoring.health_checker import HealthCheckResult
 
 
-def _healthy_result(name: str = "api", endpoint: str = "http://localhost/health") -> HealthCheckResult:
+def _healthy_result(
+    name: str = "api", endpoint: str = "http://localhost/health"
+) -> HealthCheckResult:
     return HealthCheckResult(
         service_name=name,
         endpoint=endpoint,

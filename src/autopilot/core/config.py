@@ -145,18 +145,14 @@ class GitHubIssuesConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     create_on_failure: bool = True
-    labels: list[str] = Field(
-        default_factory=lambda: ["deploy-failure", "autopilot"]
-    )
+    labels: list[str] = Field(default_factory=lambda: ["deploy-failure", "autopilot"])
 
 
 class DeploymentMonitoringConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     enabled: bool = False
-    check_frequency: Literal["every_cycle", "every_nth_cycle", "manual_only"] = (
-        "every_cycle"
-    )
+    check_frequency: Literal["every_cycle", "every_nth_cycle", "manual_only"] = "every_cycle"
     health_check_timeout_seconds: int = Field(default=10, gt=0)
     failure_patterns: dict[str, str] = Field(default_factory=dict)
     github_issues: GitHubIssuesConfig = Field(default_factory=GitHubIssuesConfig)
