@@ -14,7 +14,7 @@
 
 - **Title**: Daily summary report aggregation
 - **File**: src/autopilot/reporting/daily_summary.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a PL agent, I want a daily summary of all cycles, so that I have context about what was accomplished and what failed when planning the next cycle.
@@ -56,7 +56,7 @@
 
 - **Title**: Velocity reporting and forecasting
 - **File**: src/autopilot/reporting/velocity.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want velocity charts and forecasts, so that I can predict project completion timelines and adjust sprint capacity.
@@ -101,7 +101,7 @@
 
 - **Title**: Decision log reporting with rotation
 - **File**: src/autopilot/reporting/decision_log.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want a searchable decision audit trail, so that I can understand why specific technical choices were made during autonomous execution.
@@ -239,7 +239,7 @@
 
 - **Title**: UAT spec index builder for RFC document
 - **File**: src/autopilot/uat/spec_index.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Building the Initial Matrix, Estimated Matrix Size
 
@@ -289,7 +289,7 @@
 
 - **Title**: UAT basic test generator -- acceptance tests
 - **File**: src/autopilot/uat/test_generator.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Test Generator, Category A: Acceptance Tests
 
@@ -341,7 +341,7 @@
 
 - **Title**: UAT test executor with pytest runner
 - **File**: src/autopilot/uat/test_executor.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Test Executor, UATResult dataclass
 
@@ -391,7 +391,7 @@
 
 - **Title**: UAT per-task reporter
 - **File**: src/autopilot/uat/reporter.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: UAT Reporter, Per-task report format
 
@@ -439,7 +439,7 @@
 
 - **Title**: UAT pipeline orchestration and /autopilot-uat command
 - **File**: src/autopilot/uat/pipeline.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: High-Level Flow, /autopilot-uat command integration
 
