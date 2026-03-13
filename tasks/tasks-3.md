@@ -14,7 +14,7 @@
 
 - **Title**: Task file parser and data model
 - **File**: src/autopilot/core/task.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want the system to parse task files, so that tasks can be programmatically read, queried, and updated for sprint planning and autonomous dispatch.
@@ -348,7 +348,7 @@
 
 - **Title**: UAT skill directory structure and SKILL.md
 - **File**: .claude/skills/autopilot-uat/SKILL.md
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 - **Spec References**: UAT Discovery: /autopilot-uat Skill Architecture, YAML Frontmatter, Directory Structure
 

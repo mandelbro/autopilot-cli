@@ -14,7 +14,7 @@
 
 - **Title**: Project list, show, and switch commands
 - **File**: src/autopilot/cli/project.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect managing multiple projects, I want to list, inspect, and switch between projects, so that I can monitor all my autonomous development work from one place.
@@ -57,7 +57,7 @@
 
 - **Title**: Global project registry management
 - **File**: src/autopilot/core/project.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a developer, I want a reliable registry of all autopilot-managed projects, so that the tool can discover and manage projects across the filesystem.
@@ -105,7 +105,7 @@
 
 - **Title**: REPL skeleton with prompt-toolkit
 - **File**: src/autopilot/cli/repl.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want an interactive REPL for managing projects, so that I can explore state, dispatch agents, and monitor sessions without leaving the terminal.
@@ -157,7 +157,7 @@
 
 - **Title**: REPL context management and notifications
 - **File**: src/autopilot/cli/repl.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want the REPL to show me relevant context and important notifications, so that I stay informed about project state without constant manual checking.
@@ -209,7 +209,7 @@
 
 - **Title**: Dynamic agent registry
 - **File**: src/autopilot/core/agent_registry.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want to manage agent roles dynamically, so that I can add custom agents like security-reviewer without modifying any code.
@@ -256,7 +256,7 @@
 
 - **Title**: Template rendering system with Jinja2
 - **File**: src/autopilot/core/templates.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a developer, I want a template system for project scaffolding, so that new projects get correctly configured files based on their type and settings.
@@ -302,7 +302,7 @@
 
 - **Title**: Board management for document-mediated coordination
 - **File**: src/autopilot/coordination/board.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project leader agent, I want a well-structured project board, so that I can read project state and write dispatch decisions through markdown files.
@@ -349,7 +349,7 @@
 
 - **Title**: Question queue for agent-to-human communication
 - **File**: src/autopilot/coordination/questions.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a technical architect, I want agents to post questions that need my judgment, so that autonomous work pauses appropriately on decisions I need to make.
@@ -393,7 +393,7 @@
 
 - **Title**: Announcements channel for human-to-agent communication
 - **File**: src/autopilot/coordination/announcements.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a technical architect, I want to broadcast policy changes to all agents, so that priority shifts and new constraints are picked up in the next cycle.
@@ -436,7 +436,7 @@
 
 - **Title**: Decision log with archival and rotation
 - **File**: src/autopilot/coordination/decisions.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want an audit trail of all PL decisions, so that I can review why specific agents were dispatched and what rationale drove the choices.
