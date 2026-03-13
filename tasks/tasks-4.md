@@ -251,7 +251,7 @@
 
 - **Title**: Daemon with signal handling and log rotation
 - **File**: src/autopilot/orchestration/daemon.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want a robust daemon process, so that autonomous execution continues reliably in the background with proper signal handling and graceful shutdown.
@@ -300,7 +300,7 @@
 
 - **Title**: Hive-mind integration with claude-flow
 - **File**: src/autopilot/orchestration/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a scheduler, I want to coordinate multi-agent implementation through hive-mind, so that complex tasks are broken into worker subtasks with quality gates enforced.
