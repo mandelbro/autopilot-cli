@@ -213,6 +213,27 @@ class TestStartCommand:
         assert result.exit_code == 1
         assert "No .autopilot directory" in result.output
 
+    @patch(f"{_DAEMON_MOD}.Daemon")
+    @patch("autopilot.cli.app._build_scheduler")
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir")
+    def test_start_happy_path(
+        self,
+        mock_find: MagicMock,
+        mock_build: MagicMock,
+        mock_daemon_cls: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_find.return_value = tmp_path
+        mock_config = MagicMock()
+        mock_scheduler = MagicMock()
+        mock_build.return_value = (mock_config, mock_scheduler)
+        mock_daemon_cls.return_value.start.return_value = None
+
+        result = runner.invoke(app, ["start"])
+        assert result.exit_code == 0
+        assert "Starting session" in result.output
+        mock_daemon_cls.return_value.start.assert_called_once()
+
 
 class TestStopCommand:
     @patch(f"{_PATHS_MOD}.find_autopilot_dir", return_value=None)
@@ -244,6 +265,32 @@ class TestCycleCommand:
         result = runner.invoke(app, ["cycle"])
         assert result.exit_code == 1
         assert "No .autopilot directory" in result.output
+
+    @patch("autopilot.orchestration.dispatcher.parse_dispatch_plan")
+    @patch("autopilot.cli.app._build_scheduler")
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir")
+    def test_cycle_happy_path(
+        self,
+        mock_find: MagicMock,
+        mock_build: MagicMock,
+        mock_parse: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_find.return_value = tmp_path
+        mock_config = MagicMock()
+        mock_scheduler = MagicMock()
+        mock_result = MagicMock()
+        mock_result.id = "cycle-test-123"
+        mock_result.dispatches_succeeded = 2
+        mock_result.dispatches_planned = 3
+        mock_scheduler.run_cycle.return_value = mock_result
+        mock_build.return_value = (mock_config, mock_scheduler)
+        mock_parse.return_value = MagicMock()
+
+        result = runner.invoke(app, ["cycle"])
+        assert result.exit_code == 0
+        assert "Running single cycle" in result.output
+        mock_scheduler.run_cycle.assert_called_once()
 
 
 class TestWatchCommand:
