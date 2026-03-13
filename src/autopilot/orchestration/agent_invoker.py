@@ -183,9 +183,7 @@ class AgentInvoker:
                         duration,
                     )
                 else:
-                    last_error = (
-                        sanitize(result.stderr.strip()) or f"exit code {result.returncode}"
-                    )
+                    last_error = sanitize(result.stderr.strip()) or f"exit code {result.returncode}"
 
             except TimeoutError:
                 last_duration = time.monotonic() - start
