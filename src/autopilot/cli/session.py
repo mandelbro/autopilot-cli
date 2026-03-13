@@ -156,9 +156,16 @@ def register_session_commands(app: typer.Typer) -> None:
 
         db = Database(ap_dir / "autopilot.db")
         mgr = SessionManager(db)
-        status_enum = SessionStatus(status) if status else None
+        status_enum: SessionStatus | None = None
+        if status:
+            try:
+                status_enum = SessionStatus(status)
+            except ValueError:
+                choices = ", ".join(s.value for s in SessionStatus)
+                console.print(f"[error]Invalid status '{status}'. Choose from: {choices}[/error]")
+                raise typer.Exit(code=1) from None
         sessions = mgr.list_sessions(
-            project=project or "",
+            project=project,
             status_filter=status_enum,
         )
 
@@ -211,7 +218,7 @@ def register_session_commands(app: typer.Typer) -> None:
 
         old_handler = signal.signal(signal.SIGINT, _handle_sigint)
         try:
-            with open(log_file) as fh:
+            with open(log_file, encoding="utf-8") as fh:
                 fh.seek(0, 2)  # Seek to end
                 while not _interrupted:
                     line = fh.readline()
@@ -245,7 +252,7 @@ def register_session_commands(app: typer.Typer) -> None:
             console.print("[warning]No log file found.[/warning]")
             raise typer.Exit(code=1)
 
-        with open(log_file) as fh:
+        with open(log_file, encoding="utf-8") as fh:
             tail = deque(fh, maxlen=lines)
 
         for line in tail:

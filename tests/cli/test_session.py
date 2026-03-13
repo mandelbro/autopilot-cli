@@ -101,6 +101,18 @@ class TestSessionResume:
         assert result.exit_code == 0
         assert "resumed" in result.output
 
+    @patch(f"{_MOD}.SessionManager")
+    @patch(f"{_MOD}.Database")
+    @patch(f"{_MOD}.find_autopilot_dir")
+    def test_resume_not_found(
+        self, mock_find: MagicMock, _db: MagicMock, mock_mgr_cls: MagicMock, tmp_path: Path
+    ) -> None:
+        mock_find.return_value = tmp_path
+        mock_mgr_cls.return_value.get_session.return_value = None
+        result = runner.invoke(app, ["session", "resume", "abc123"])
+        assert result.exit_code == 1
+        assert "not found" in result.output
+
 
 class TestSessionList:
     @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
@@ -119,6 +131,31 @@ class TestSessionList:
         result = runner.invoke(app, ["session", "list"])
         assert result.exit_code == 0
         assert "No sessions found" in result.output
+
+    @patch(f"{_MOD}.SessionManager")
+    @patch(f"{_MOD}.Database")
+    @patch(f"{_MOD}.find_autopilot_dir")
+    def test_list_no_project_passes_none(
+        self, mock_find: MagicMock, _db: MagicMock, mock_mgr_cls: MagicMock, tmp_path: Path
+    ) -> None:
+        """Regression: no --project must pass None, not empty string."""
+        mock_find.return_value = tmp_path
+        mock_mgr_cls.return_value.list_sessions.return_value = []
+        runner.invoke(app, ["session", "list"])
+        mock_mgr_cls.return_value.list_sessions.assert_called_once_with(
+            project=None,
+            status_filter=None,
+        )
+
+    @patch(f"{_MOD}.find_autopilot_dir")
+    def test_list_invalid_status_exits_with_error(
+        self, mock_find: MagicMock, tmp_path: Path
+    ) -> None:
+        """Regression: invalid --status must show error, not traceback."""
+        mock_find.return_value = tmp_path
+        result = runner.invoke(app, ["session", "list", "--status", "bogus"])
+        assert result.exit_code == 1
+        assert "Invalid status" in result.output
 
 
 class TestSessionLog:
