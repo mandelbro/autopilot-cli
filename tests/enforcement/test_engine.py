@@ -94,6 +94,23 @@ class TestEnforcementEngineReport:
         assert isinstance(report, EnforcementReport)
         assert report.project_id == "test-project"
 
+    def test_report_total_violations_round_trip(self, tmp_path: Path) -> None:
+        """Verify total_violations is correct after check -> store -> report."""
+        cfg = EnforcementConfig(categories=["comments"])
+        db = tmp_path / "metrics.db"
+        engine = EnforcementEngine(cfg, db_path=db)
+
+        # Create a file with excessive comments to produce violations
+        py_file = tmp_path / "commented.py"
+        lines = ["# comment line\n"] * 15 + ["x = 1\n"] * 5
+        py_file.write_text("".join(lines))
+
+        check_results = engine.check(tmp_path)
+        check_violations = sum(len(r.violations) for r in check_results)
+
+        report = engine.report("test")
+        assert report.total_violations == check_violations
+
 
 class TestQualityGatePrompt:
     def test_prompt_contains_categories(self) -> None:

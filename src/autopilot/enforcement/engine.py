@@ -133,7 +133,7 @@ class EnforcementEngine:
         """Generate an enforcement report from stored metrics."""
         report = EnforcementReport(project_id=project_id)
         if self._db_path and self._db_path.exists():
-            report.results = self._load_latest_results(project_id)
+            report.results = self._load_latest_results()
         return report
 
     def build_quality_gate_prompt(self) -> str:
@@ -207,8 +207,12 @@ class EnforcementEngine:
         except sqlite3.Error:
             _log.exception("Failed to store enforcement metrics")
 
-    def _load_latest_results(self, project_id: str) -> list[CheckResult]:
-        """Load the most recent check results from SQLite."""
+    def _load_latest_results(self) -> list[CheckResult]:
+        """Load the most recent check results from SQLite.
+
+        Reconstructs placeholder violations from stored counts so that
+        ``EnforcementReport.total_violations`` is accurate.
+        """
         if not self._db_path or not self._db_path.exists():
             return []
         try:
@@ -220,11 +224,25 @@ class EnforcementEngine:
                     WHERE collected_at = (SELECT MAX(collected_at) FROM enforcement_metrics)
                     ORDER BY category"""
                 )
+                from autopilot.core.models import Violation
+
                 results: list[CheckResult] = []
                 for row in cursor.fetchall():
+                    category = row[0]
+                    count = row[1]
+                    placeholders = tuple(
+                        Violation(
+                            category=category,
+                            rule="stored-metric",
+                            file="",
+                            message="(loaded from metrics)",
+                        )
+                        for _ in range(count)
+                    )
                     results.append(
                         CheckResult(
-                            category=row[0],
+                            category=category,
+                            violations=placeholders,
                             files_scanned=row[2],
                             duration_seconds=row[3],
                         )
