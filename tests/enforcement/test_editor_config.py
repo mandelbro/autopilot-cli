@@ -21,7 +21,20 @@ class TestGenerateRuffConfig:
     def test_covers_all_11_categories(self) -> None:
         config = generate_ruff_config()
         codes = config["lint"]["select"]
-        expected_codes = {"I", "N", "C901", "SIM", "S", "BLE", "TRY", "ANN", "PT", "ERA", "UP", "ASYNC"}
+        expected_codes = {
+            "I",
+            "N",
+            "C901",
+            "SIM",
+            "S",
+            "BLE",
+            "TRY",
+            "ANN",
+            "PT",
+            "ERA",
+            "UP",
+            "ASYNC",
+        }
         missing = expected_codes - set(codes)
         assert missing == set(), f"Missing ruff codes: {missing}"
 

@@ -97,11 +97,7 @@ def apply_to_pyproject(pyproject_path: Path, config: dict[str, Any]) -> None:
 def _deep_merge_into(base: dict[str, Any], overlay: dict[str, Any]) -> None:
     """Recursively merge *overlay* into *base*, mutating base in place."""
     for key, value in overlay.items():
-        if (
-            key in base
-            and isinstance(base[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
             _deep_merge_into(base[key], value)
         else:
             base[key] = value
@@ -116,9 +112,7 @@ def _write_toml_fallback(path: Path, data: dict[str, Any]) -> None:
     path.write_text("\n".join(lines) + "\n")
 
 
-def _toml_section(
-    lines: list[str], data: dict[str, Any], prefix: list[str]
-) -> None:
+def _toml_section(lines: list[str], data: dict[str, Any], prefix: list[str]) -> None:
     """Recursively emit TOML sections."""
     simple: dict[str, Any] = {}
     nested: dict[str, dict[str, Any]] = {}

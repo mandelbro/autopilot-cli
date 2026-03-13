@@ -81,9 +81,7 @@ class TestEnforcementEngineCheck:
         engine.check(tmp_path)
 
         conn = sqlite3.connect(str(db))
-        count = conn.execute(
-            "SELECT COUNT(*) FROM enforcement_metrics"
-        ).fetchone()[0]
+        count = conn.execute("SELECT COUNT(*) FROM enforcement_metrics").fetchone()[0]
         conn.close()
         assert count >= 1
 

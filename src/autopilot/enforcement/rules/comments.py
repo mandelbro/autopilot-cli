@@ -25,9 +25,7 @@ class CommentsRule:
     heuristic: if > 40% of non-blank lines are comments, flag the file.
     """
 
-    def __init__(
-        self, *, severity: ViolationSeverity = ViolationSeverity.INFO
-    ) -> None:
+    def __init__(self, *, severity: ViolationSeverity = ViolationSeverity.INFO) -> None:
         self._severity = severity
 
     @property
@@ -57,9 +55,7 @@ class CommentsRule:
             if len(non_blank) < 10:
                 continue
 
-            comment_lines = sum(
-                1 for ln in non_blank if ln.strip().startswith("#")
-            )
+            comment_lines = sum(1 for ln in non_blank if ln.strip().startswith("#"))
             density = comment_lines / len(non_blank)
 
             if density > _COMMENT_DENSITY_THRESHOLD:

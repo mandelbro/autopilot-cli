@@ -24,9 +24,7 @@ class TypeSafetyRule:
     Satisfies the ``EnforcementRule`` protocol.
     """
 
-    def __init__(
-        self, *, severity: ViolationSeverity = ViolationSeverity.WARNING
-    ) -> None:
+    def __init__(self, *, severity: ViolationSeverity = ViolationSeverity.WARNING) -> None:
         self._severity = severity
 
     @property

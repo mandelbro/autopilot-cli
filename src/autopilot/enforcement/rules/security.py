@@ -24,9 +24,7 @@ class SecurityRule:
     Satisfies the ``EnforcementRule`` protocol.
     """
 
-    def __init__(
-        self, *, severity: ViolationSeverity = ViolationSeverity.ERROR
-    ) -> None:
+    def __init__(self, *, severity: ViolationSeverity = ViolationSeverity.ERROR) -> None:
         self._severity = severity
 
     @property

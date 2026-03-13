@@ -24,9 +24,7 @@ class DeadCodeRule:
     Satisfies the ``EnforcementRule`` protocol.
     """
 
-    def __init__(
-        self, *, severity: ViolationSeverity = ViolationSeverity.INFO
-    ) -> None:
+    def __init__(self, *, severity: ViolationSeverity = ViolationSeverity.INFO) -> None:
         self._severity = severity
 
     @property
