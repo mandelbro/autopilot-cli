@@ -62,13 +62,14 @@ class TestConfigTemplate:
 
 
 class TestAgentTemplates:
-    def test_all_four_agents_exist(self) -> None:
+    def test_all_agents_exist(self) -> None:
         templates_dir = Path(__file__).resolve().parents[2] / "templates" / "python" / "agents"
         expected = {
             "project-leader.md",
             "engineering-manager.md",
             "technical-architect.md",
             "product-director.md",
+            "devops-agent.md",
         }
         actual = {f.name for f in templates_dir.iterdir() if f.suffix == ".md"}
         assert expected == actual
@@ -80,6 +81,7 @@ class TestAgentTemplates:
             "agents/engineering-manager.md",
             "agents/technical-architect.md",
             "agents/product-director.md",
+            "agents/devops-agent.md",
         ]
         for name in agents:
             template = env.get_template(name)

@@ -11,8 +11,11 @@ from pydantic import ValidationError
 from autopilot.core.config import (
     AgentsConfig,
     AutopilotConfig,
+    DeploymentMonitoringConfig,
     EnforcementConfig,
     GitConfig,
+    GitHubIssuesConfig,
+    MonitoredServiceConfig,
     ProjectConfig,
     SafetyConfig,
     SchedulerConfig,
@@ -226,6 +229,92 @@ class TestAutopilotConfig:
             AutopilotConfig(
                 project=ProjectConfig(name="bad", type="ruby"),  # type: ignore[arg-type]
             )
+
+
+class TestMonitoredServiceConfig:
+    def test_defaults(self) -> None:
+        cfg = MonitoredServiceConfig()
+        assert cfg.id == ""
+        assert cfg.name == ""
+        assert cfg.health_endpoints == []
+        assert cfg.staging_url == ""
+
+    def test_custom_values(self) -> None:
+        cfg = MonitoredServiceConfig(
+            id="svc-1",
+            name="api",
+            health_endpoints=["http://localhost/health"],
+            staging_url="http://staging.example.com",
+        )
+        assert cfg.id == "svc-1"
+        assert len(cfg.health_endpoints) == 1
+
+    def test_frozen(self) -> None:
+        cfg = MonitoredServiceConfig()
+        with pytest.raises(ValidationError):
+            cfg.name = "other"  # type: ignore[misc]
+
+
+class TestGitHubIssuesConfig:
+    def test_defaults(self) -> None:
+        cfg = GitHubIssuesConfig()
+        assert cfg.create_on_failure is True
+        assert "deploy-failure" in cfg.labels
+        assert "autopilot" in cfg.labels
+
+
+class TestDeploymentMonitoringConfig:
+    def test_defaults(self) -> None:
+        cfg = DeploymentMonitoringConfig()
+        assert cfg.enabled is False
+        assert cfg.check_frequency == "every_cycle"
+        assert cfg.health_check_timeout_seconds == 10
+        assert cfg.failure_patterns == {}
+        assert cfg.services == {}
+
+    def test_with_services(self) -> None:
+        cfg = DeploymentMonitoringConfig(
+            services={
+                "api": MonitoredServiceConfig(
+                    id="svc-1",
+                    name="api",
+                    health_endpoints=["http://api/health"],
+                ),
+            }
+        )
+        assert "api" in cfg.services
+        assert cfg.services["api"].name == "api"
+
+    def test_with_failure_patterns(self) -> None:
+        cfg = DeploymentMonitoringConfig(failure_patterns={"db_error": r"database.*timeout"})
+        assert "db_error" in cfg.failure_patterns
+
+    def test_yaml_round_trip(self, tmp_path: Path) -> None:
+        original = AutopilotConfig(
+            project=ProjectConfig(name="monitor-test"),
+            deployment_monitoring=DeploymentMonitoringConfig(
+                enabled=True,
+                check_frequency="every_nth_cycle",
+                services={
+                    "web": MonitoredServiceConfig(
+                        id="svc-web",
+                        name="web",
+                        health_endpoints=["http://web/health"],
+                        staging_url="http://staging.web",
+                    )
+                },
+                failure_patterns={"custom": r"pattern"},
+            ),
+        )
+        yaml_path = tmp_path / "config.yaml"
+        original.to_yaml(yaml_path)
+        loaded = AutopilotConfig.from_yaml(yaml_path)
+
+        assert loaded.deployment_monitoring.enabled is True
+        assert loaded.deployment_monitoring.check_frequency == "every_nth_cycle"
+        assert "web" in loaded.deployment_monitoring.services
+        assert loaded.deployment_monitoring.services["web"].staging_url == "http://staging.web"
+        assert "custom" in loaded.deployment_monitoring.failure_patterns
 
 
 class TestDeepMerge:
