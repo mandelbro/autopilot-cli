@@ -14,7 +14,7 @@
 
 - **Title**: Agent invoker with retry and model fallback
 - **File**: src/autopilot/orchestration/agent_invoker.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a scheduler, I want reliable agent invocation with retry logic and model fallback, so that transient failures do not derail autonomous execution cycles.
@@ -64,7 +64,7 @@
 
 - **Title**: Dispatch plan parser and validator
 - **File**: src/autopilot/orchestration/dispatcher.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a scheduler, I want robust dispatch plan parsing from PL agent output, so that even when the PL drifts from the contract, dispatches are correctly extracted and validated.
@@ -109,7 +109,7 @@
 
 - **Title**: Circuit breaker pattern
 - **File**: src/autopilot/orchestration/circuit_breaker.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want a circuit breaker that aborts remaining dispatches after consecutive failures, so that wasted cycles and costs are minimized during outages.
