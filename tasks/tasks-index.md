@@ -1,10 +1,10 @@
 ## Overall Project Task Summary
 
 - **Total Tasks**: 94
-- **Pending**: 42
-- **Complete**: 52
+- **Pending**: 37
+- **Complete**: 57
 - **Total Points**: 355
-- **Points Complete**: 185
+- **Points Complete**: 208
 
 ## Project: Autopilot CLI
 
