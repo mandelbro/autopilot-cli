@@ -155,8 +155,8 @@
 ### Task ID: 024
 
 - **Title**: Sprint planning with velocity tracking
-- **File**: src/autopilot/core/task.py
-- **Complete**: [ ]
+- **File**: src/autopilot/core/sprint.py
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want velocity-based sprint planning, so that I can plan realistic sprints based on historical throughput and forecast completion dates.
@@ -204,8 +204,8 @@
 ### Task ID: 025
 
 - **Title**: Discovery-to-task conversion pipeline
-- **File**: src/autopilot/core/task.py
-- **Complete**: [ ]
+- **File**: src/autopilot/core/discovery.py
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want to convert discovery documents into structured tasks, so that findings automatically become actionable work items with proper estimation and ordering.
@@ -304,8 +304,8 @@
 ### Task ID: 027
 
 - **Title**: Fibonacci estimation support and velocity storage
-- **File**: src/autopilot/core/task.py
-- **Complete**: [ ]
+- **File**: src/autopilot/core/sprint.py
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want estimation support with Fibonacci validation, so that task sizing is consistent and velocity metrics are meaningful.
