@@ -255,7 +255,7 @@
 
 - **Title**: Sprint plan and close CLI commands
 - **File**: src/autopilot/cli/task.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want to plan and close sprints from the CLI, so that I can manage development cadence with velocity-informed capacity.
@@ -399,7 +399,7 @@
 
 - **Title**: UAT task context loader
 - **File**: src/autopilot/uat/task_context.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Task Context Loader, TaskContext dataclass, SpecReference dataclass
 
@@ -449,7 +449,7 @@
 
 - **Title**: UAT specification cross-reference engine (explicit references)
 - **File**: src/autopilot/uat/spec_engine.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Spec Cross-Reference Engine, TraceabilityMatrix dataclass
 
