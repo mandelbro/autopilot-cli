@@ -75,6 +75,10 @@
       "description": "Number of tests that were skipped.",
       "minimum": 0
     },
+    "overall_pass": {
+      "type": "boolean",
+      "description": "Whether the score meets the configured threshold."
+    },
     "duration_seconds": {
       "type": "number",
       "description": "Total execution time in seconds.",

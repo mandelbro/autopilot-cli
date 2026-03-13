@@ -213,7 +213,6 @@ class TaskParser:
         i = start + 1
         in_prompt = False
         prompt_lines: list[str] = []
-        fence_count = 0
 
         while i < len(lines):
             line = lines[i]
@@ -224,18 +223,14 @@ class TaskParser:
 
             # Track fenced code blocks for prompt extraction
             if line.strip().startswith("```"):
-                if not in_prompt and fence_count == 0:
-                    # Opening fence (e.g. ```markdown) -> start capturing
-                    fence_count = 1
+                if not in_prompt:
                     in_prompt = True
                     i += 1
                     continue
-                if in_prompt:
-                    # Closing fence -> stop capturing
-                    in_prompt = False
-                    fence_count = 0
-                    i += 1
-                    continue
+                # Closing fence -> stop capturing
+                in_prompt = False
+                i += 1
+                continue
 
             if in_prompt:
                 prompt_lines.append(line)
@@ -335,8 +330,9 @@ def update_task_status(task_dir: Path, task_id: str, complete: bool) -> None:
     index = parser.parse_task_index(index_path)
     normalized = TaskParser._normalize_id(task_id)
 
-    # Locate the task file containing this ID
+    # Locate the task and its file
     target_file: Path | None = None
+    found_task: Task | None = None
     for entry in index.file_index:
         file_path = task_dir / entry.file
         if not file_path.exists():
@@ -345,19 +341,25 @@ def update_task_status(task_dir: Path, task_id: str, complete: bool) -> None:
         for task in tasks:
             if TaskParser._normalize_id(task.id) == normalized:
                 target_file = file_path
+                found_task = task
                 break
         if target_file:
             break
 
-    if target_file is None:
+    if target_file is None or found_task is None:
         msg = f"Task ID '{task_id}' not found in any task file"
         raise ValueError(msg)
+
+    # Idempotent: if task already has the requested status, do nothing
+    if found_task.complete == complete:
+        return
 
     # 1. Update the task file
     _update_task_file(target_file, task_id, complete)
 
-    # 2. Update the index summary
-    _update_index_file(index_path, task_id, complete, index)
+    # 2. Update the index summary (pass sprint_points to avoid redundant I/O)
+    points = found_task.sprint_points if isinstance(found_task.sprint_points, int) else 0
+    _update_index_file(index_path, complete, index, points)
 
 
 def _update_task_file(path: Path, task_id: str, complete: bool) -> None:
@@ -384,16 +386,8 @@ def _update_task_file(path: Path, task_id: str, complete: bool) -> None:
     path.write_text("\n".join(result), encoding="utf-8")
 
 
-def _update_index_file(path: Path, task_id: str, complete: bool, index: TaskIndex) -> None:
+def _update_index_file(path: Path, complete: bool, index: TaskIndex, points: int) -> None:
     """Adjust Pending / Complete / Points Complete in tasks-index.md."""
-    # Find the task to get its sprint points
-    parser = TaskParser()
-    task_dir = path.parent
-    task = parser.find_task_by_id(task_dir, task_id)
-    points = 0
-    if task is not None and isinstance(task.sprint_points, int):
-        points = task.sprint_points
-
     text = path.read_text(encoding="utf-8")
     lines = text.split("\n")
     result: list[str] = []

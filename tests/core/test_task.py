@@ -389,6 +389,28 @@ class TestUpdateTaskStatus:
         with pytest.raises(FileNotFoundError):
             update_task_status(tmp_path, "001", complete=True)
 
+    def test_idempotent_mark_complete(self, tmp_path: Path) -> None:
+        """Marking an already-complete task as complete should not drift counters."""
+        task_dir = _write_task_dir(tmp_path)
+        # Task 001 is already complete in the fixture
+        update_task_status(task_dir, "001", complete=True)
+
+        idx = TaskParser().parse_task_index(task_dir / "tasks-index.md")
+        # Counters must remain unchanged (not double-counted)
+        assert idx.pending == 3
+        assert idx.complete == 1
+        assert idx.points_complete == 3
+
+    def test_idempotent_mark_incomplete(self, tmp_path: Path) -> None:
+        """Marking an already-pending task as incomplete should not drift counters."""
+        task_dir = _write_task_dir(tmp_path)
+        update_task_status(task_dir, "002", complete=False)
+
+        idx = TaskParser().parse_task_index(task_dir / "tasks-index.md")
+        assert idx.pending == 3
+        assert idx.complete == 1
+        assert idx.points_complete == 3
+
     def test_unknown_task_raises(self, tmp_path: Path) -> None:
         task_dir = _write_task_dir(tmp_path)
         with pytest.raises(ValueError, match="not found"):
