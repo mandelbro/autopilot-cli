@@ -72,9 +72,7 @@ _TITLE_RE = re.compile(r"^\s*-\s+\*\*Title\*\*:\s*(.+)$")
 _FILE_RE = re.compile(r"^\s*-\s+\*\*File\*\*:\s*(.+)$")
 _COMPLETE_RE = re.compile(r"^\s*-\s+\*\*Complete\*\*:\s*\[(.)\]")
 _POINTS_RE = re.compile(r"^\s*-\s+\*\*Sprint Points\*\*:\s*(.+)$")
-_USER_STORY_RE = re.compile(
-    r"^\s*-\s+\*\*User Story \(business-facing\)\*\*:\s*(.+)$"
-)
+_USER_STORY_RE = re.compile(r"^\s*-\s+\*\*User Story \(business-facing\)\*\*:\s*(.+)$")
 _OUTCOME_RE = re.compile(r"^\s*-\s+\*\*Outcome \(what this delivers\)\*\*:\s*(.+)$")
 _SPEC_REFS_RE = re.compile(r"^\s*-\s+\*\*Spec References?\*\*:\s*(.+)$", re.IGNORECASE)
 _UAT_STATUS_RE = re.compile(r"^\s*-\s+\*\*UAT Status\*\*:\s*(.+)$", re.IGNORECASE)
@@ -199,9 +197,7 @@ class TaskParser:
                 i += 1
         return tasks
 
-    def _parse_single_task(
-        self, lines: list[str], start: int, task_id: str
-    ) -> tuple[Task, int]:
+    def _parse_single_task(self, lines: list[str], start: int, task_id: str) -> tuple[Task, int]:
         """Parse a single task block starting at *start*. Returns (Task, next_line)."""
         title = ""
         file_path = ""
@@ -264,9 +260,7 @@ class TaskParser:
             elif m := _OUTCOME_RE.match(line):
                 outcome = m.group(1).strip()
             elif m := _SPEC_REFS_RE.match(line):
-                spec_references = [
-                    r.strip() for r in m.group(1).split(",") if r.strip()
-                ]
+                spec_references = [r.strip() for r in m.group(1).split(",") if r.strip()]
             elif m := _UAT_STATUS_RE.match(line):
                 uat_status = m.group(1).strip()
 
@@ -390,9 +384,7 @@ def _update_task_file(path: Path, task_id: str, complete: bool) -> None:
     path.write_text("\n".join(result), encoding="utf-8")
 
 
-def _update_index_file(
-    path: Path, task_id: str, complete: bool, index: TaskIndex
-) -> None:
+def _update_index_file(path: Path, task_id: str, complete: bool, index: TaskIndex) -> None:
     """Adjust Pending / Complete / Points Complete in tasks-index.md."""
     # Find the task to get its sprint points
     parser = TaskParser()
