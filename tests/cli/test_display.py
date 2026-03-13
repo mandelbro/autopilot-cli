@@ -1,4 +1,4 @@
-"""Tests for autopilot.cli.display (Task 009)."""
+"""Tests for autopilot.cli.display (Tasks 009, 044)."""
 
 from __future__ import annotations
 
@@ -9,12 +9,14 @@ from rich.panel import Panel
 from rich.table import Table
 
 from autopilot.cli.display import (
+    ProjectState,
     console,
     format_sprint_points,
     format_status,
     notification,
     progress_bar,
     project_table,
+    render_dashboard,
     status_panel,
     task_board,
 )
@@ -168,3 +170,83 @@ class TestNotification:
             assert "ERR" in output
         finally:
             display_mod.console = orig
+
+
+# -- Dashboard tests (Task 044) ------------------------------------------------
+
+
+class TestProjectState:
+    def test_defaults(self) -> None:
+        state = ProjectState()
+        assert state.name == ""
+        assert state.status == "idle"
+        assert state.active_sessions == 0
+
+
+class TestRenderDashboard:
+    def test_renders_project_name(self) -> None:
+        state = ProjectState(name="my-project", status="running")
+        output = render_dashboard(state)
+        assert "my-project" in output
+
+    def test_fits_80_columns(self) -> None:
+        state = ProjectState(name="test-proj", status="running")
+        output = render_dashboard(state)
+        for line in output.splitlines():
+            assert len(line) <= 80
+
+    def test_shows_sessions_count(self) -> None:
+        state = ProjectState(name="proj", active_sessions=3)
+        output = render_dashboard(state)
+        assert "3" in output
+
+    def test_shows_sprint_progress(self) -> None:
+        state = ProjectState(name="proj", sprint_total=20, sprint_done=10)
+        output = render_dashboard(state)
+        assert "10/20" in output
+
+    def test_shows_no_sprint_message(self) -> None:
+        state = ProjectState(name="proj", sprint_total=0)
+        output = render_dashboard(state)
+        assert "no active sprint" in output
+
+    def test_shows_recent_cycles(self) -> None:
+        state = ProjectState(
+            name="proj",
+            recent_cycles=[
+                {"id": "cycle-001", "status": "COMPLETED"},
+                {"id": "cycle-002", "status": "FAILED"},
+            ],
+        )
+        output = render_dashboard(state)
+        assert "cycle-00" in output
+
+    def test_shows_task_summary(self) -> None:
+        state = ProjectState(
+            name="proj",
+            task_pending=5,
+            task_active=2,
+            task_done=10,
+        )
+        output = render_dashboard(state)
+        assert "Pending: 5" in output
+        assert "Done: 10" in output
+
+    def test_empty_state(self) -> None:
+        state = ProjectState()
+        output = render_dashboard(state)
+        assert "No Project" in output
+        assert "autopilot init" in output
+
+    def test_alerts_shown(self) -> None:
+        state = ProjectState(name="proj", alerts=["Build failed"])
+        output = render_dashboard(state)
+        assert "Build failed" in output
+
+    def test_expand_mode(self) -> None:
+        state = ProjectState(
+            name="proj",
+            recent_cycles=[{"id": "c1", "status": "COMPLETED", "dispatches": "5"}],
+        )
+        output = render_dashboard(state, expand=True)
+        assert "Velocity" in output

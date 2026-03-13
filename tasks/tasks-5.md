@@ -144,7 +144,7 @@
 
 - **Title**: Dashboard -- 80x24 two-column layout
 - **File**: src/autopilot/cli/display.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want a compact dashboard that shows project health at a glance, so that I can assess status in under 2 seconds from any state.
@@ -195,7 +195,7 @@
 
 - **Title**: CLI commands -- start, stop, pause, resume, cycle
 - **File**: src/autopilot/cli/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want top-level commands for controlling autonomous execution, so that starting and stopping the autopilot is as simple as `autopilot start`.

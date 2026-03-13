@@ -1,4 +1,4 @@
-"""Tests for session CLI commands (Task 039)."""
+"""Tests for session CLI commands (Tasks 039, 045)."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 runner = CliRunner()
 
 _MOD = "autopilot.cli.session"
+_APP_MOD = "autopilot.cli.app"
 
 
 class TestSessionHelp:
@@ -197,3 +198,63 @@ class TestSessionAttach:
         result = runner.invoke(app, ["session", "attach", "abc123"])
         assert result.exit_code == 1
         assert "No log file" in result.output
+
+
+# -- Top-level convenience commands (Task 045) --------------------------------
+
+_PATHS_MOD = "autopilot.utils.paths"
+_DAEMON_MOD = "autopilot.orchestration.daemon"
+
+
+class TestStartCommand:
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["start"])
+        assert result.exit_code == 1
+        assert "No .autopilot directory" in result.output
+
+
+class TestStopCommand:
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["stop"])
+        assert result.exit_code == 1
+        assert "No .autopilot directory" in result.output
+
+    @patch(f"{_DAEMON_MOD}.stop_daemon", return_value=True)
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir")
+    def test_stop_success(self, mock_find: MagicMock, _stop: MagicMock, tmp_path: Path) -> None:
+        mock_find.return_value = tmp_path
+        result = runner.invoke(app, ["stop"])
+        assert result.exit_code == 0
+        assert "stopped" in result.output
+
+    @patch(f"{_DAEMON_MOD}.stop_daemon", return_value=False)
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir")
+    def test_stop_no_daemon(self, mock_find: MagicMock, _stop: MagicMock, tmp_path: Path) -> None:
+        mock_find.return_value = tmp_path
+        result = runner.invoke(app, ["stop"])
+        assert result.exit_code == 0
+        assert "No running daemon" in result.output
+
+
+class TestCycleCommand:
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["cycle"])
+        assert result.exit_code == 1
+        assert "No .autopilot directory" in result.output
+
+
+class TestWatchCommand:
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["watch"])
+        assert result.exit_code == 1
+        assert "No .autopilot directory" in result.output
+
+    @patch(f"{_PATHS_MOD}.find_autopilot_dir")
+    def test_watch_renders_dashboard(self, mock_find: MagicMock, tmp_path: Path) -> None:
+        mock_find.return_value = tmp_path
+        result = runner.invoke(app, ["watch"])
+        assert result.exit_code == 0

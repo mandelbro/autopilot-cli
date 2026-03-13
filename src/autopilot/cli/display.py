@@ -1,17 +1,21 @@
 """Rich display helpers for consistent CLI output (UX Design Sections 4, 7, 9).
 
 Provides reusable formatting utilities for tables, panels, progress bars,
-status indicators, and notifications. All output targets 80-column width.
+status indicators, notifications, and the 80x24 dashboard. All output targets
+80-column width.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any
 
+from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
+from rich.text import Text
 from rich.theme import Theme
 
 # Color constants per UX Design Section 9
@@ -144,3 +148,118 @@ def notification(level: str, message: str) -> None:
     }
     icon = icon_map.get(level, level.upper())
     console.print(f"{prefix}[{icon}]{close} {message}")
+
+
+# ---------------------------------------------------------------------------
+# Dashboard (Task 044) — 80x24 two-column layout per UX Design Section 4
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ProjectState:
+    """State snapshot for dashboard rendering."""
+
+    name: str = ""
+    status: str = "idle"
+    active_sessions: int = 0
+    sprint_total: int = 0
+    sprint_done: int = 0
+    recent_cycles: list[dict[str, str]] = field(default_factory=list)
+    task_pending: int = 0
+    task_active: int = 0
+    task_done: int = 0
+    alerts: list[str] = field(default_factory=list)
+
+
+def render_dashboard(
+    state: ProjectState,
+    *,
+    width: int = 80,
+    expand: bool = False,
+) -> str:
+    """Render a compact 80x24 two-column dashboard.
+
+    Left column: Project name, status, sessions, sprint progress bar.
+    Right column: Recent cycle outcomes, task board summary.
+    Bottom: Notification/alerts strip.
+    """
+    buf = Console(width=width, record=True, theme=_THEME)
+
+    # Header
+    buf.print(
+        Text(f" {state.name or 'No Project'} ", style="bold reverse"),
+        justify="center",
+    )
+    buf.print()
+
+    # Left column content
+    left_lines: list[str] = []
+    left_lines.append(f"Status: {state.status}")
+    left_lines.append(f"Sessions: {state.active_sessions}")
+    left_lines.append("")
+
+    # Sprint progress
+    if state.sprint_total > 0:
+        pct = state.sprint_done / state.sprint_total
+        filled = int(pct * 20)
+        bar = "#" * filled + "-" * (20 - filled)
+        left_lines.append(f"Sprint: [{bar}] {state.sprint_done}/{state.sprint_total}")
+    else:
+        left_lines.append("Sprint: [muted]no active sprint[/muted]")
+
+    left_panel = Panel(
+        "\n".join(left_lines),
+        title="Project",
+        width=width // 2 - 1,
+        height=10,
+    )
+
+    # Right column content
+    right_lines: list[str] = []
+
+    # Recent cycles
+    if state.recent_cycles:
+        right_lines.append("[bold]Recent Cycles[/bold]")
+        for cyc in state.recent_cycles[:5]:
+            status_str = cyc.get("status", "?")
+            icon = "[success]OK[/success]" if status_str == "COMPLETED" else "[error]FAIL[/error]"
+            right_lines.append(f"  {icon} {cyc.get('id', '?')[:8]}")
+    else:
+        right_lines.append("[muted]No recent cycles[/muted]")
+
+    right_lines.append("")
+
+    # Task summary
+    right_lines.append("[bold]Tasks[/bold]")
+    right_lines.append(
+        f"  Pending: {state.task_pending} | Active: {state.task_active} | Done: {state.task_done}"
+    )
+
+    right_panel = Panel(
+        "\n".join(right_lines),
+        title="Activity",
+        width=width // 2 - 1,
+        height=10,
+    )
+
+    buf.print(Columns([left_panel, right_panel], width=width, padding=(0, 0)))
+
+    # Expanded view with velocity chart
+    if expand and state.recent_cycles:
+        buf.print()
+        buf.print("[bold]Velocity[/bold]")
+        for cyc in state.recent_cycles[:5]:
+            dispatches = int(cyc.get("dispatches", "0"))
+            bar = "#" * min(dispatches, 30)
+            buf.print(f"  {cyc.get('id', '?')[:8]}: {bar} {dispatches}")
+
+    # Alerts strip
+    if state.alerts:
+        buf.print()
+        for alert in state.alerts[:3]:
+            buf.print(f"[warning]! {alert}[/warning]")
+    elif not state.name:
+        buf.print()
+        buf.print("[muted]Run 'autopilot init' to set up a project.[/muted]")
+
+    return buf.export_text()
