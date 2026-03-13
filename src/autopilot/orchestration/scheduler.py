@@ -110,9 +110,11 @@ class Scheduler:
         try:
             self._phase_execute(ctx, dispatch_plan)
         finally:
-            # Phase 3: Bookkeeping (always runs)
-            result = self._phase_bookkeep(ctx)
-            self._lock.release()
+            # Phase 3: Bookkeeping (always runs, lock always released)
+            try:
+                result = self._phase_bookkeep(ctx)
+            finally:
+                self._lock.release()
 
         return result
 
