@@ -296,6 +296,18 @@ class TestSprintPlanner:
         with pytest.raises(ValueError, match="No active sprint"):
             planner.close_sprint("nonexistent")
 
+    def test_close_sprint_with_ids_only(self, planner: SprintPlanner) -> None:
+        """Closing with completed_task_ids but no all_tasks must still count correctly."""
+        tasks = _sample_tasks()
+        sprint = planner.plan_sprint(tasks, capacity=10)
+
+        # Pass only IDs, no task objects
+        result = planner.close_sprint(sprint.id, completed_task_ids=["001", "003"])
+        assert result.tasks_completed == 2
+        assert result.tasks_carried_over == 1
+        # Points unknown without task objects, so 0 is acceptable
+        assert result.points_completed == 0
+
     def test_close_sprint_auto_detects_completion(self, planner: SprintPlanner) -> None:
         tasks = _sample_tasks()
         sprint = planner.plan_sprint(tasks, capacity=10)

@@ -261,14 +261,13 @@ class SprintPlanner:
 
         points_completed = 0
         tasks_completed = 0
-        if all_tasks:
-            task_map = {t.id: t for t in all_tasks}
-            for tid in sprint.tasks:
-                if tid in completed_ids and tid in task_map:
-                    t = task_map[tid]
-                    pts = t.sprint_points if isinstance(t.sprint_points, int) else 0
-                    points_completed += pts
-                    tasks_completed += 1
+        task_map = {t.id: t for t in all_tasks} if all_tasks else {}
+        for tid in sprint.tasks:
+            if tid in completed_ids:
+                tasks_completed += 1
+                if tid in task_map:
+                    pts = task_map[tid].sprint_points
+                    points_completed += pts if isinstance(pts, int) else 0
 
         carried_over = len(sprint.tasks) - tasks_completed
 
