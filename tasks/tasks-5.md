@@ -239,7 +239,7 @@
 
 - **Title**: UAT spec index builder for RFC document
 - **File**: src/autopilot/uat/spec_index.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Building the Initial Matrix, Estimated Matrix Size
 
@@ -289,7 +289,7 @@
 
 - **Title**: UAT basic test generator -- acceptance tests
 - **File**: src/autopilot/uat/test_generator.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Test Generator, Category A: Acceptance Tests
 
@@ -341,7 +341,7 @@
 
 - **Title**: UAT test executor with pytest runner
 - **File**: src/autopilot/uat/test_executor.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Test Executor, UATResult dataclass
 
@@ -391,7 +391,7 @@
 
 - **Title**: UAT per-task reporter
 - **File**: src/autopilot/uat/reporter.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: UAT Reporter, Per-task report format
 
@@ -439,7 +439,7 @@
 
 - **Title**: UAT pipeline orchestration and /autopilot-uat command
 - **File**: src/autopilot/uat/pipeline.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: High-Level Flow, /autopilot-uat command integration
 
