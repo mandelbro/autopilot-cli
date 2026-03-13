@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 import pytest
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pathlib import Path
 
 from typer.testing import CliRunner
@@ -220,104 +220,78 @@ class TestSprintClose:
         assert result.exit_code == 1
         assert "No active sprint" in result.output
 
-    def test_plan_then_close(self, task_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Plan a sprint, then close it with some completed tasks."""
-        from unittest.mock import patch
+    def test_plan_then_close(self, task_env: Path) -> None:
+        """Plan a sprint via CLI, then close it — no monkey-patching needed."""
+        db_path = str(task_env / "test.db")
 
-        from autopilot.core.sprint import SprintPlanner
-        from autopilot.core.task import TaskParser
-        from autopilot.utils.db import Database
+        # Step 1: Plan a sprint
+        plan_result = runner.invoke(
+            app,
+            ["task", "sprint", "plan", "--task-dir", "tasks", "--db-path", db_path],
+        )
+        assert plan_result.exit_code == 0
 
-        db_path = task_env / "test.db"
-        db = Database(db_path)
-        planner = SprintPlanner(db, "default")
-        parser = TaskParser()
+        # Extract the sprint ID from the plan output
+        import re
 
-        task_dir = task_env / "tasks"
-        index = parser.parse_task_index(task_dir / "tasks-index.md")
-        all_tasks = []
-        for entry in index.file_index:
-            fp = task_dir / entry.file
-            if fp.exists():
-                all_tasks.extend(parser.parse_task_file(fp))
+        m = re.search(r"ID:\s*(\w+)", plan_result.output)
+        assert m is not None, f"Could not find sprint ID in output: {plan_result.output}"
+        sprint_id = m.group(1)
 
-        pending = [t for t in all_tasks if not t.complete]
-        sprint = planner.plan_sprint(pending, 13)
+        # Step 2: Close the sprint (separate CLI invocation, fresh process)
+        close_result = runner.invoke(
+            app,
+            [
+                "task",
+                "sprint",
+                "close",
+                "--sprint-id",
+                sprint_id,
+                "--completed",
+                "002",
+                "--task-dir",
+                "tasks",
+                "--db-path",
+                db_path,
+            ],
+        )
+        assert close_result.exit_code == 0
+        assert "Sprint Summary" in close_result.output
+        assert "Velocity recorded" in close_result.output
 
-        # Patch SprintPlanner so the CLI's new instance shares the active sprint
-        original_init = SprintPlanner.__init__
-
-        def patched_init(self: SprintPlanner, *a: object, **kw: object) -> None:
-            original_init(self, *a, **kw)  # type: ignore[arg-type]
-            self._active = sprint
-
-        with patch.object(SprintPlanner, "__init__", patched_init):
-            result = runner.invoke(
-                app,
-                [
-                    "task",
-                    "sprint",
-                    "close",
-                    "--sprint-id",
-                    sprint.id,
-                    "--completed",
-                    "002",
-                    "--task-dir",
-                    "tasks",
-                    "--db-path",
-                    str(db_path),
-                ],
-            )
-        assert result.exit_code == 0
-        assert "Sprint Summary" in result.output
-        assert "Velocity recorded" in result.output
-
-    def test_close_shows_carryover(self, task_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_close_shows_carryover(self, task_env: Path) -> None:
         """Closing with incomplete tasks shows carryover table."""
-        from unittest.mock import patch
+        db_path = str(task_env / "test.db")
 
-        from autopilot.core.sprint import SprintPlanner
-        from autopilot.core.task import TaskParser
-        from autopilot.utils.db import Database
+        # Plan a sprint first
+        plan_result = runner.invoke(
+            app,
+            ["task", "sprint", "plan", "--task-dir", "tasks", "--db-path", db_path],
+        )
+        assert plan_result.exit_code == 0
 
-        db_path = task_env / "test.db"
-        db = Database(db_path)
-        planner = SprintPlanner(db, "default")
-        parser = TaskParser()
+        import re
 
-        task_dir = task_env / "tasks"
-        index = parser.parse_task_index(task_dir / "tasks-index.md")
-        all_tasks = []
-        for entry in index.file_index:
-            fp = task_dir / entry.file
-            if fp.exists():
-                all_tasks.extend(parser.parse_task_file(fp))
+        m = re.search(r"ID:\s*(\w+)", plan_result.output)
+        assert m is not None
+        sprint_id = m.group(1)
 
-        pending = [t for t in all_tasks if not t.complete]
-        sprint = planner.plan_sprint(pending, 13)
-
-        original_init = SprintPlanner.__init__
-
-        def patched_init(self: SprintPlanner, *a: object, **kw: object) -> None:
-            original_init(self, *a, **kw)  # type: ignore[arg-type]
-            self._active = sprint
-
-        with patch.object(SprintPlanner, "__init__", patched_init):
-            result = runner.invoke(
-                app,
-                [
-                    "task",
-                    "sprint",
-                    "close",
-                    "--sprint-id",
-                    sprint.id,
-                    "--completed",
-                    "002",
-                    "--task-dir",
-                    "tasks",
-                    "--db-path",
-                    str(db_path),
-                ],
-            )
-        assert result.exit_code == 0
-        assert "Carried Over" in result.output
+        # Close with only 1 of 3 tasks completed — should show carryover
+        close_result = runner.invoke(
+            app,
+            [
+                "task",
+                "sprint",
+                "close",
+                "--sprint-id",
+                sprint_id,
+                "--completed",
+                "002",
+                "--task-dir",
+                "tasks",
+                "--db-path",
+                db_path,
+            ],
+        )
+        assert close_result.exit_code == 0
+        assert "Carried Over" in close_result.output

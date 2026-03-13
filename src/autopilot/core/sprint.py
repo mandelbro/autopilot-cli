@@ -6,6 +6,7 @@ for capacity-based sprint planning per RFC Section 6 Phase 2.
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -190,7 +191,6 @@ class SprintPlanner:
         self._db = db
         self._project_id = project_id
         self._tracker = VelocityTracker(db, project_id)
-        self._active: Sprint | None = None
 
     # -- public API --
 
@@ -231,7 +231,7 @@ class SprintPlanner:
             points_planned=total_points,
             status="active",
         )
-        self._active = sprint
+        self._persist_sprint(sprint)
         return sprint
 
     def close_sprint(
@@ -245,7 +245,7 @@ class SprintPlanner:
         If *completed_task_ids* is provided, only those tasks count as done.
         Otherwise falls back to checking the *all_tasks* completion status.
         """
-        sprint = self._active
+        sprint = self.active_sprint()
         if sprint is None or sprint.id != sprint_id:
             msg = f"No active sprint with id '{sprint_id}'"
             raise ValueError(msg)
@@ -282,12 +282,69 @@ class SprintPlanner:
         )
 
         self._tracker.record_sprint(result)
-        self._active = None
+        self._delete_sprint(sprint_id)
         return result
 
     def active_sprint(self) -> Sprint | None:
-        """Return the current active sprint, or None."""
-        return self._active
+        """Return the current active sprint from SQLite, or None."""
+        return self._load_active_sprint()
+
+    # -- persistence helpers --
+
+    def _persist_sprint(self, sprint: Sprint) -> None:
+        """Save the sprint to SQLite."""
+        conn = self._db.get_connection()
+        try:
+            conn.execute(
+                "INSERT OR REPLACE INTO sprints "
+                "(id, project_id, start_date, end_date, tasks, capacity, points_planned, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    sprint.id,
+                    self._project_id,
+                    sprint.start_date.isoformat(),
+                    sprint.end_date.isoformat(),
+                    json.dumps(sprint.tasks),
+                    sprint.capacity,
+                    sprint.points_planned,
+                    sprint.status,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _load_active_sprint(self) -> Sprint | None:
+        """Load the active sprint from SQLite."""
+        conn = self._db.get_connection()
+        try:
+            row = conn.execute(
+                "SELECT id, start_date, end_date, tasks, capacity, points_planned, status "
+                "FROM sprints WHERE project_id = ? AND status = 'active' LIMIT 1",
+                (self._project_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return None
+        return Sprint(
+            id=row[0],
+            start_date=datetime.fromisoformat(row[1]),
+            end_date=datetime.fromisoformat(row[2]) if row[2] else datetime.now(UTC),
+            tasks=json.loads(row[3]),
+            capacity=row[4],
+            points_planned=row[5],
+            status=row[6],
+        )
+
+    def _delete_sprint(self, sprint_id: str) -> None:
+        """Remove a sprint from SQLite after closing."""
+        conn = self._db.get_connection()
+        try:
+            conn.execute("DELETE FROM sprints WHERE id = ?", (sprint_id,))
+            conn.commit()
+        finally:
+            conn.close()
 
     @property
     def velocity_tracker(self) -> VelocityTracker:

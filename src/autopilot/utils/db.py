@@ -94,6 +94,17 @@ CREATE TABLE IF NOT EXISTS velocity (
     tasks_carried_over INTEGER DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS sprints (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id),
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    tasks TEXT NOT NULL DEFAULT '[]',
+    capacity INTEGER DEFAULT 0,
+    points_planned INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active'
+);
+
 -- Indices for common query patterns
 CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project_id);
 CREATE INDEX IF NOT EXISTS idx_cycles_project ON cycles(project_id);
