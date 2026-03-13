@@ -118,7 +118,10 @@ class FailureClassifier:
                 )
 
         for name, regex in self.custom_patterns.items():
-            match = re.search(regex, error_output)
+            try:
+                match = re.search(regex, error_output)
+            except re.error:
+                continue
             if match:
                 return FailureClassification(
                     pattern_name=name,

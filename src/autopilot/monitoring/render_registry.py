@@ -122,11 +122,19 @@ class GitHubIssueCreator:
         return "\n".join(sections)
 
     def _run_gh(self, *args: str) -> subprocess.CompletedProcess[str]:
-        """Run a ``gh`` CLI command."""
-        return subprocess.run(
-            ["gh", *args],
-            capture_output=True,
-            text=True,
-            cwd=self.cwd,
-            timeout=30,
-        )
+        """Run a ``gh`` CLI command.
+
+        Returns a synthetic failure result if gh is absent or times out.
+        """
+        try:
+            return subprocess.run(
+                ["gh", *args],
+                capture_output=True,
+                text=True,
+                cwd=self.cwd,
+                timeout=30,
+            )
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return subprocess.CompletedProcess(
+                args=["gh", *args], returncode=1, stdout="", stderr="gh unavailable"
+            )

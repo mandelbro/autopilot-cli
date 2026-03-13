@@ -105,6 +105,11 @@ class TestFailureClassifierCustomPatterns:
         result = classifier.classify("random error text")
         assert result.pattern_name == "unknown"
 
+    def test_malformed_custom_regex_skipped(self) -> None:
+        classifier = FailureClassifier(custom_patterns={"bad": r"[invalid(regex"})
+        result = classifier.classify("some error text")
+        assert result.pattern_name == "unknown"
+
 
 class TestRouteRemediation:
     def test_routes_classification(self) -> None:

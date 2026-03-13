@@ -97,6 +97,28 @@ class TestGitHubIssueCreator:
 
         assert url == "https://github.com/org/repo/issues/99"
 
+    def test_gh_not_found_returns_empty(self) -> None:
+        creator = GitHubIssueCreator()
+
+        with patch(
+            "autopilot.monitoring.render_registry.subprocess.run",
+            side_effect=FileNotFoundError("gh not found"),
+        ):
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
+
+        assert url == ""
+
+    def test_gh_timeout_returns_empty(self) -> None:
+        creator = GitHubIssueCreator()
+
+        with patch(
+            "autopilot.monitoring.render_registry.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="gh", timeout=30),
+        ):
+            url = creator.create_deploy_failure_issue(_make_failure(), _make_context())
+
+        assert url == ""
+
     def test_custom_labels(self) -> None:
         creator = GitHubIssueCreator(labels=["urgent", "deploy"])
 
