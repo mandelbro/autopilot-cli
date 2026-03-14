@@ -9,6 +9,7 @@ from __future__ import annotations
 import typer
 
 from autopilot import __version__
+from autopilot.cli.enforce import register_enforce_commands
 from autopilot.cli.project import project_app
 from autopilot.cli.session import register_session_commands
 from autopilot.cli.sprint import register_sprint_commands
@@ -248,19 +249,11 @@ register_sprint_commands(sprint_sub)
 
 register_session_commands(session_app)
 
+# -- Enforcement commands (registered from enforce module) ----------------------
+
+register_enforce_commands(enforce_app)
+
 # -- Stub subcommands for Phase 2+ -------------------------------------------
-
-
-@enforce_app.command("run")
-def enforce_run() -> None:
-    """Run enforcement checks."""
-    typer.echo("Not yet implemented: enforce run")
-
-
-@enforce_app.command("report")
-def enforce_report() -> None:
-    """Show enforcement report."""
-    typer.echo("Not yet implemented: enforce report")
 
 
 @agent_app.command("list")

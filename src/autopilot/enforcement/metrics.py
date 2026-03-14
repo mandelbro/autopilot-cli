@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -47,12 +47,12 @@ class EnforcementMetricsCollector:
         self._init_db()
 
     def _init_db(self) -> None:
-        """Create the enforcement_metrics table if it does not exist."""
+        """Create the enforcement_metrics_detail table if it does not exist."""
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self._db_path))
         try:
             conn.execute(
-                """CREATE TABLE IF NOT EXISTS enforcement_metrics (
+                """CREATE TABLE IF NOT EXISTS enforcement_metrics_detail (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     collected_at TEXT NOT NULL,
                     project_id TEXT NOT NULL,
@@ -75,10 +75,10 @@ class EnforcementMetricsCollector:
         """
         conn = sqlite3.connect(str(self._db_path))
         try:
-            now = datetime.now(UTC).isoformat()
+            now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
             for r in results:
                 conn.execute(
-                    """INSERT INTO enforcement_metrics
+                    """INSERT INTO enforcement_metrics_detail
                     (collected_at, project_id, category, violations_count,
                      files_scanned, duration_seconds)
                     VALUES (?, ?, ?, ?, ?, ?)""",
@@ -108,17 +108,16 @@ class EnforcementMetricsCollector:
         """
         conn = sqlite3.connect(str(self._db_path))
         try:
-            cutoff = datetime.now(UTC)
-            cutoff_iso = cutoff.isoformat()
-            # SQLite datetime comparison works with ISO strings
+            cutoff = datetime.now(UTC) - timedelta(days=days)
+            cutoff_str = cutoff.strftime("%Y-%m-%dT%H:%M:%S")
             cursor = conn.execute(
                 """SELECT collected_at, violations_count, files_scanned
-                FROM enforcement_metrics
+                FROM enforcement_metrics_detail
                 WHERE project_id = ?
                   AND category = ?
-                  AND collected_at >= datetime(?, '-' || ? || ' days')
+                  AND collected_at >= ?
                 ORDER BY collected_at ASC""",
-                (project_id, category, cutoff_iso, days),
+                (project_id, category, cutoff_str),
             )
             return [
                 MetricPoint(
@@ -149,7 +148,7 @@ class EnforcementMetricsCollector:
             # Find the two most recent distinct collected_at timestamps
             cursor = conn.execute(
                 """SELECT DISTINCT collected_at
-                FROM enforcement_metrics
+                FROM enforcement_metrics_detail
                 WHERE project_id = ?
                 ORDER BY collected_at DESC
                 LIMIT 2""",
@@ -165,7 +164,7 @@ class EnforcementMetricsCollector:
             # Get per-category counts for latest
             cursor = conn.execute(
                 """SELECT category, violations_count
-                FROM enforcement_metrics
+                FROM enforcement_metrics_detail
                 WHERE project_id = ? AND collected_at = ?""",
                 (project_id, latest_ts),
             )
@@ -181,7 +180,7 @@ class EnforcementMetricsCollector:
                 prev_ts = timestamps[1]
                 cursor = conn.execute(
                     """SELECT SUM(violations_count)
-                    FROM enforcement_metrics
+                    FROM enforcement_metrics_detail
                     WHERE project_id = ? AND collected_at = ?""",
                     (project_id, prev_ts),
                 )

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-import time
 from typing import TYPE_CHECKING
 
 from autopilot.core.models import CheckResult, Violation, ViolationSeverity
@@ -50,7 +49,7 @@ class TestDatabaseInit:
         conn = sqlite3.connect(str(db))
         try:
             cursor = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='enforcement_metrics'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='enforcement_metrics_detail'"
             )
             assert cursor.fetchone() is not None
         finally:
@@ -69,7 +68,7 @@ class TestRecordCheck:
         try:
             cursor = conn.execute(
                 "SELECT project_id, category, violations_count, files_scanned "
-                "FROM enforcement_metrics ORDER BY category"
+                "FROM enforcement_metrics_detail ORDER BY category"
             )
             rows = cursor.fetchall()
             assert len(rows) == 2
@@ -100,9 +99,9 @@ class TestGetTrend:
         # Insert an old record manually (60 days ago)
         conn = sqlite3.connect(str(db))
         try:
-            old_ts = "2020-01-01T00:00:00+00:00"
+            old_ts = "2020-01-01T00:00:00"
             conn.execute(
-                """INSERT INTO enforcement_metrics
+                """INSERT INTO enforcement_metrics_detail
                 (collected_at, project_id, category, violations_count,
                  files_scanned, duration_seconds)
                 VALUES (?, ?, ?, ?, ?, ?)""",
@@ -151,16 +150,24 @@ class TestGetSummary:
         db = tmp_path / "metrics.db"
         collector = EnforcementMetricsCollector(db)
 
-        # First check: 5 violations
-        results_1 = _make_results({"security": 5})
-        collector.record_check("proj-1", results_1)
-
-        # Small delay to ensure distinct timestamps
-        time.sleep(0.01)
-
-        # Second check: 2 violations
-        results_2 = _make_results({"security": 2})
-        collector.record_check("proj-1", results_2)
+        # Insert two runs with explicit distinct timestamps via raw SQL
+        conn = sqlite3.connect(str(db))
+        try:
+            conn.execute(
+                "INSERT INTO enforcement_metrics_detail "
+                "(collected_at, project_id, category, violations_count, files_scanned, duration_seconds) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                ("2026-01-01T00:00:00", "proj-1", "security", 5, 10, 0.5),
+            )
+            conn.execute(
+                "INSERT INTO enforcement_metrics_detail "
+                "(collected_at, project_id, category, violations_count, files_scanned, duration_seconds) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                ("2026-01-02T00:00:00", "proj-1", "security", 2, 10, 0.5),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
         summary = collector.get_summary("proj-1")
         assert summary.trend_direction == "improving"
@@ -169,13 +176,23 @@ class TestGetSummary:
         db = tmp_path / "metrics.db"
         collector = EnforcementMetricsCollector(db)
 
-        results_1 = _make_results({"security": 1})
-        collector.record_check("proj-1", results_1)
-
-        time.sleep(0.01)
-
-        results_2 = _make_results({"security": 5})
-        collector.record_check("proj-1", results_2)
+        conn = sqlite3.connect(str(db))
+        try:
+            conn.execute(
+                "INSERT INTO enforcement_metrics_detail "
+                "(collected_at, project_id, category, violations_count, files_scanned, duration_seconds) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                ("2026-01-01T00:00:00", "proj-1", "security", 1, 10, 0.5),
+            )
+            conn.execute(
+                "INSERT INTO enforcement_metrics_detail "
+                "(collected_at, project_id, category, violations_count, files_scanned, duration_seconds) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                ("2026-01-02T00:00:00", "proj-1", "security", 5, 10, 0.5),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
         summary = collector.get_summary("proj-1")
         assert summary.trend_direction == "degrading"

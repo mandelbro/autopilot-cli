@@ -146,6 +146,33 @@ def register_enforce_commands(app: typer.Typer) -> None:
         from autopilot.cli.display import console
 
         engine, _root, project_name = _resolve_enforcement(project)
+
+        # Try metrics collector for time-windowed data; fall back to engine report.
+        from autopilot.enforcement.metrics import EnforcementMetricsCollector
+        from autopilot.utils.paths import find_autopilot_dir
+
+        ap_dir = find_autopilot_dir()
+        if ap_dir is not None:
+            db_path = ap_dir / "enforcement.db"
+            if db_path.exists():
+                collector = EnforcementMetricsCollector(db_path)
+                summary = collector.get_summary(project_name)
+                if summary.total_violations > 0 or summary.by_category:
+                    table = Table(title=f"Enforcement Report ({days}d)", width=80)
+                    table.add_column("Category", ratio=2)
+                    table.add_column("Violations", width=11, justify="right")
+
+                    for cat, count in sorted(summary.by_category.items()):
+                        if category and cat != category:
+                            continue
+                        table.add_row(cat, str(count))
+
+                    console.print(table)
+                    console.print(
+                        f"\nTotal: {summary.total_violations} | Trend: {summary.trend_direction}"
+                    )
+                    return
+
         report = engine.report(project_name)
 
         results = report.results
@@ -156,7 +183,7 @@ def register_enforce_commands(app: typer.Typer) -> None:
             console.print("[info]No enforcement data available for report.[/info]")
             return
 
-        table = Table(title=f"Enforcement Report ({days}d)", width=80)
+        table = Table(title="Enforcement Report", width=80)
         table.add_column("Category", ratio=2)
         table.add_column("Violations", width=11, justify="right")
         table.add_column("Files Scanned", width=14, justify="right")

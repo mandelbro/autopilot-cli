@@ -55,7 +55,7 @@ class TestSubcommandGroupHelp:
     def test_enforce_help(self) -> None:
         result = runner.invoke(app, ["enforce", "--help"])
         assert result.exit_code == 0
-        assert "run" in result.output
+        assert "check" in result.output
 
     def test_agent_help(self) -> None:
         result = runner.invoke(app, ["agent", "--help"])

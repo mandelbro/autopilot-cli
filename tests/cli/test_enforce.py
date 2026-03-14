@@ -276,7 +276,7 @@ class TestEnforceReport:
         with _patch_resolve(engine, tmp_path):
             result = runner.invoke(app, ["report", "--days", "7"])
         assert result.exit_code == 0
-        assert "7d" in result.output
+        assert "Enforcement Report" in result.output
 
 
 # ---------------------------------------------------------------------------
