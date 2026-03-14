@@ -94,6 +94,7 @@ class TestStubCommands:
         result = runner.invoke(app, ["review"])
         assert result.exit_code == 0
 
-    def test_migrate_stub(self) -> None:
+    def test_migrate_no_repengine_layout(self) -> None:
+        """Migrate exits with code 1 when no RepEngine layout is found."""
         result = runner.invoke(app, ["migrate"])
-        assert result.exit_code == 0
+        assert result.exit_code == 1
