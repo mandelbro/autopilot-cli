@@ -16,7 +16,9 @@ runner = CliRunner()
 
 class TestPlanDiscover:
     def test_discover_no_autopilot_dir(self, tmp_path: Path) -> None:
-        result = runner.invoke(app, ["plan", "discover", "myproject", "auth"], catch_exceptions=False)
+        result = runner.invoke(
+            app, ["plan", "discover", "myproject", "auth"], catch_exceptions=False
+        )
         # Should fail because no .autopilot dir exists in cwd
         assert result.exit_code != 0 or "No .autopilot" in result.output or result.exit_code == 0
 

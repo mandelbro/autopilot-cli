@@ -24,9 +24,7 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
     def plan_discover(
         project: str = typer.Argument(..., help="Project name for discovery."),
         topic: str = typer.Argument(..., help="Topic or area to analyze."),
-        wait: bool = typer.Option(
-            False, "--wait", "-w", help="Block until discovery completes."
-        ),
+        wait: bool = typer.Option(False, "--wait", "-w", help="Block until discovery completes."),
         output: str = typer.Option(
             "", "--output", "-o", help="Output path for discovery document."
         ),
@@ -61,8 +59,7 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
             console.print(f"[success]Discovery complete: {discovery_file}[/success]")
         else:
             console.print(
-                "[dim]Discovery session registered. "
-                "Use --wait to block until complete.[/dim]"
+                "[dim]Discovery session registered. Use --wait to block until complete.[/dim]"
             )
             # Write a placeholder discovery document
             _write_placeholder(discovery_file, project, topic)
@@ -76,9 +73,7 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
         output_dir: str = typer.Option(
             "tasks", "--output", "-o", help="Output directory for task files."
         ),
-        merge: bool = typer.Option(
-            False, "--merge", help="Merge with existing task files."
-        ),
+        merge: bool = typer.Option(False, "--merge", help="Merge with existing task files."),
     ) -> None:
         """Convert a discovery document into task files."""
         from autopilot.core.discovery import DiscoveryParser, TaskFileWriter
@@ -180,9 +175,7 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
                 console.print(f"    Total: {index.total_tasks}")
                 console.print(f"    Complete: {index.complete}")
                 console.print(f"    Pending: {index.pending}")
-                console.print(
-                    f"    Points: {index.points_complete}/{index.total_points}"
-                )
+                console.print(f"    Points: {index.points_complete}/{index.total_points}")
             else:
                 console.print("  [dim]No task index found.[/dim]")
         else:
@@ -201,9 +194,7 @@ def _slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:60]
 
 
-def _load_discovery_template(
-    ap_dir: Path, project: str, project_dir: Path
-) -> str:
+def _load_discovery_template(ap_dir: Path, project: str, project_dir: Path) -> str:
     """Load and render the Norwood discovery prompt template."""
     from jinja2 import Environment, FileSystemLoader
 
@@ -232,9 +223,7 @@ def _load_discovery_template(
     return content
 
 
-def _run_discovery_sync(
-    template_content: str, topic: str, output_path: Path
-) -> None:
+def _run_discovery_sync(template_content: str, topic: str, output_path: Path) -> None:
     """Run discovery synchronously (placeholder for agent integration)."""
     content = (
         f"# Discovery: {topic}\n\n"
