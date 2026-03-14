@@ -329,7 +329,7 @@
 
 - **Title**: UAT spec index for Discovery and UX Design documents
 - **File**: src/autopilot/uat/spec_index.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Building the Initial Matrix (Discovery and UX extraction)
 
@@ -377,7 +377,7 @@
 
 - **Title**: UAT traceability matrix data model and storage
 - **File**: src/autopilot/uat/traceability.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Specification Traceability Matrix Design, TraceabilityEntry dataclass
 
@@ -430,7 +430,7 @@
 
 - **Title**: UAT coverage and gaps reporters
 - **File**: src/autopilot/uat/reporter.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Coverage view, Gaps view output formats
 
