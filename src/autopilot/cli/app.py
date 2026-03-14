@@ -9,6 +9,7 @@ from __future__ import annotations
 import typer
 
 from autopilot import __version__
+from autopilot.cli.completions import complete_project_names, complete_project_types
 from autopilot.cli.discover import register_discover_commands
 from autopilot.cli.enforce import register_enforce_commands
 from autopilot.cli.project import project_app
@@ -86,6 +87,7 @@ def init(
         "-t",
         prompt="Project type (python/typescript/hybrid)",
         help="Project type.",
+        autocompletion=complete_project_types,
     ),
     root: str = typer.Option(".", "--root", "-r", help="Project root directory."),
 ) -> None:
@@ -139,7 +141,9 @@ def _build_scheduler(ap_dir, project_name: str):
 
 @app.command()
 def start(
-    project: str = typer.Option("", "--project", "-p", help="Project name."),
+    project: str = typer.Option(
+        "", "--project", "-p", help="Project name.", autocompletion=complete_project_names
+    ),
 ) -> None:
     """Start an autonomous session (alias for ``session start``)."""
     from autopilot.cli.display import console
@@ -165,7 +169,9 @@ def start(
 
 @app.command()
 def stop(
-    project: str = typer.Option("", "--project", "-p", help="Project name."),
+    project: str = typer.Option(
+        "", "--project", "-p", help="Project name.", autocompletion=complete_project_names
+    ),
 ) -> None:
     """Stop the running session (alias for ``session stop``)."""
     from autopilot.cli.display import console
@@ -181,7 +187,9 @@ def stop(
 
 @app.command()
 def cycle(
-    project: str = typer.Option("", "--project", "-p", help="Project name."),
+    project: str = typer.Option(
+        "", "--project", "-p", help="Project name.", autocompletion=complete_project_names
+    ),
 ) -> None:
     """Run a single scheduler cycle inline (no daemon)."""
     from autopilot.cli.display import console
@@ -207,7 +215,9 @@ def cycle(
 
 @app.command()
 def watch(
-    project: str = typer.Option("", "--project", "-p", help="Project name."),
+    project: str = typer.Option(
+        "", "--project", "-p", help="Project name.", autocompletion=complete_project_names
+    ),
 ) -> None:
     """Watch mode with live dashboard."""
     from autopilot.cli.display import ProjectState, console, render_dashboard
@@ -231,9 +241,40 @@ def review() -> None:
 
 
 @app.command()
-def migrate() -> None:
-    """Migrate from RepEngine autopilot layout."""
-    typer.echo("Not yet implemented: migrate")
+def migrate(
+    project_root: str = typer.Option(".", "--project-root", "-r", help="Project root directory."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would change without modifying anything."
+    ),
+) -> None:
+    """Migrate from RepEngine autopilot/ layout to .autopilot/ format."""
+    from pathlib import Path
+
+    from autopilot.cli.display import console, notification
+    from autopilot.core.migration import MigrationEngine
+
+    root = Path(project_root).resolve()
+    engine = MigrationEngine()
+
+    if not engine.detect_repengine_layout(root):
+        notification("error", "No RepEngine autopilot/ directory found.")
+        raise typer.Exit(code=1)
+
+    if dry_run:
+        console.print("[bold]Dry run mode[/bold] -- no changes will be made.\n")
+
+    result = engine.migrate(root, dry_run=dry_run)
+
+    if result.success:
+        notification("success", f"Migration complete! {len(result.files_copied)} files processed.")
+        if result.files_copied:
+            for f in result.files_copied:
+                console.print(f"  [dim]{f}[/dim]")
+    else:
+        notification("error", "Migration failed.")
+        for err in result.errors:
+            console.print(f"  [red]{err}[/red]")
+        raise typer.Exit(code=1)
 
 
 # -- Task commands (registered from task module) -----------------------------

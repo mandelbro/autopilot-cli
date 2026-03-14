@@ -14,7 +14,7 @@
 
 - **Title**: TypeScript project template
 - **File**: templates/typescript/
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect working with TypeScript projects, I want autopilot templates for TypeScript, so that `autopilot init --type typescript` generates appropriate config, quality gates, and agent prompts.
@@ -58,7 +58,7 @@
 
 - **Title**: RepEngine layout migration command
 - **File**: src/autopilot/cli/migrate.py, src/autopilot/core/migration.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As an existing RepEngine user, I want to migrate my autopilot setup to the new .autopilot/ format, so that I can use the new CLI without losing my existing config and history.
@@ -108,7 +108,7 @@
 
 - **Title**: Shell completions for bash, zsh, fish
 - **File**: src/autopilot/cli/app.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a CLI user, I want tab completion in my shell, so that I can discover commands and options without memorizing the full reference.

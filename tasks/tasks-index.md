@@ -1,10 +1,10 @@
 ## Overall Project Task Summary
 
-- **Total Tasks**: 94
-- **Pending**: 13
-- **Complete**: 81
-- **Total Points**: 355
-- **Points Complete**: 289
+- **Total Tasks**: 104
+- **Pending**: 20
+- **Complete**: 84
+- **Total Points**: 388
+- **Points Complete**: 299
 
 ## Project: Autopilot CLI
 
@@ -13,6 +13,8 @@
   - `docs/ideation/autopilot-uat-discovery.md` (UAT Framework Discovery)
   - `docs/ideation/RFC.md` (Technical RFC)
   - `docs/ideation/ux-design.md` (UX Design Document)
+  - `docs/ideation/workspace-isolation-discovery.md` (Workspace Isolation Discovery)
+  - `docs/ADR/ADR-011-workspace-isolation.md` (ADR-011: Workspace Isolation)
 - **Description**: A standalone Python CLI tool that evolves the RepEngine autopilot into a general-purpose autonomous development orchestrator with interactive REPL, project scaffolding, task management, autonomous execution, anti-pattern enforcement, deployment monitoring, and a parallel UAT framework for specification compliance verification.
 
 ## Task File Index
@@ -27,6 +29,7 @@
 - `tasks/tasks-8.md`: Contains Tasks 071 - 080 (10 tasks, 38 points) -- UAT Phase 3: Parallel Execution + Main Phase 6: Discovery
 - `tasks/tasks-9.md`: Contains Tasks 081 - 090 (10 tasks, 41 points) -- Main Phase 6-7: Templates, Migration, Multi-Project + UAT Phase 4: Learning
 - `tasks/tasks-10.md`: Contains Tasks 091 - 094 (4 tasks, 11 points) -- Dev Standards Compliance: Logging, Strict Types, Pre-commit, Config
+- `tasks/tasks-11.md`: Contains Tasks 095 - 104 (10 tasks, 33 points) -- Main Phase 8: Workspace Isolation
 
 ## Phase Mapping
 
@@ -41,6 +44,7 @@
 | 5 | Enforcement Engine | 056-067 | 2-3 | 55 |
 | 6 | Discovery Integration | 077-083 | 2-3 | 26 |
 | 7 | Multi-Project | 084-088 | 2-3 | 21 |
+| 8 | Workspace Isolation | 095-104 | 2-3 | 33 |
 
 ### UAT Framework Phases
 
