@@ -150,7 +150,7 @@
 
 - **Title**: UAT batch mode with swarm coordination
 - **File**: src/autopilot/uat/batch.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Parallel Execution Model, Swarm Coordination
 
@@ -200,7 +200,7 @@
 
 - **Title**: UAT automatic trigger hooks (post-task-complete)
 - **File**: src/autopilot/uat/triggers.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: UAT Trigger System, Automatic mode
 
@@ -246,7 +246,7 @@
 
 - **Title**: UAT feedback loop (advisory and gated modes)
 - **File**: src/autopilot/uat/feedback.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Feedback Loop, Advisory mode, Gated mode
 
