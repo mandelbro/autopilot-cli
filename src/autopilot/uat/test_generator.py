@@ -117,15 +117,7 @@ class TestGenerator:
         seen_slugs: set[str] = set()
 
         for criterion in criteria:
-            slug = _slugify(criterion)
-
-            # Ensure unique slug
-            base_slug = slug
-            counter = 2
-            while slug in seen_slugs:
-                slug = f"{base_slug}_{counter}"
-                counter += 1
-            seen_slugs.add(slug)
+            slug = _unique_slug(_slugify(criterion), seen_slugs)
 
             name = f"test_task_{task_id}_{slug}"
             test_names.append(name)
@@ -254,13 +246,7 @@ class BehavioralTestGenerator:
         for criterion in context.acceptance_criteria:
             lower = criterion.lower()
             if any(kw in lower for kw in behavioral_keywords):
-                slug = _slugify(criterion)
-                base_slug = slug
-                counter = 2
-                while slug in seen_slugs:
-                    slug = f"{base_slug}_{counter}"
-                    counter += 1
-                seen_slugs.add(slug)
+                slug = _unique_slug(_slugify(criterion), seen_slugs)
 
                 name = f"test_user_story_{task_id}_{slug}"
                 test_names.append(name)
@@ -337,20 +323,14 @@ class ComplianceTestGenerator:
             section_slug = _slugify(entry.section, max_length=30)
             req_slug = _slugify(entry.requirement_text, max_length=30)
 
-            combined = f"{section_slug}_{req_slug}"
-            base = combined
-            counter = 2
-            while combined in seen_slugs:
-                combined = f"{base}_{counter}"
-                counter += 1
-            seen_slugs.add(combined)
+            combined = _unique_slug(f"{section_slug}_{req_slug}", seen_slugs)
 
             name = f"test_rfc_{combined}"
             test_names.append(name)
             body_parts.append(
                 _COMPLIANCE_TEMPLATE.format(
                     section_slug=section_slug,
-                    req_slug=combined.split("_", 1)[-1] if "_" in combined else combined,
+                    req_slug=req_slug,
                     spec_id=_escape_docstring(entry.spec_id),
                     section=_escape_docstring(entry.section),
                     requirement=_escape_docstring(entry.requirement_text[:200]),
@@ -417,20 +397,14 @@ class UXTestGenerator:
             section_slug = _slugify(entry.section, max_length=30)
             req_slug = _slugify(entry.requirement_text, max_length=30)
 
-            combined = f"{section_slug}_{req_slug}"
-            base = combined
-            counter = 2
-            while combined in seen_slugs:
-                combined = f"{base}_{counter}"
-                counter += 1
-            seen_slugs.add(combined)
+            combined = _unique_slug(f"{section_slug}_{req_slug}", seen_slugs)
 
             name = f"test_ux_{combined}"
             test_names.append(name)
             body_parts.append(
                 _UX_TEMPLATE.format(
                     section_slug=section_slug,
-                    req_slug=combined.split("_", 1)[-1] if "_" in combined else combined,
+                    req_slug=req_slug,
                     spec_id=_escape_docstring(entry.spec_id),
                     section=_escape_docstring(entry.section),
                     requirement=_escape_docstring(entry.requirement_text[:200]),
@@ -461,3 +435,14 @@ def _sanitize_id(task_id: str) -> str:
 def _escape_docstring(text: str) -> str:
     """Escape text for safe inclusion in a docstring."""
     return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _unique_slug(base: str, seen: set[str]) -> str:
+    """Return a unique slug by appending a counter suffix if needed."""
+    slug = base
+    counter = 2
+    while slug in seen:
+        slug = f"{base}_{counter}"
+        counter += 1
+    seen.add(slug)
+    return slug

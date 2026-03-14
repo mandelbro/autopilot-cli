@@ -20,6 +20,7 @@ from autopilot.uat.test_generator import (
     _parse_user_story,
     _sanitize_id,
     _slugify,
+    _unique_slug,
 )
 
 # ---------------------------------------------------------------------------
@@ -70,6 +71,25 @@ class TestSanitizeId:
 
     def test_dotted_id(self) -> None:
         assert _sanitize_id("1.2.3") == "1_2_3"
+
+
+class TestUniqueSlug:
+    def test_unique_when_not_seen(self) -> None:
+        seen: set[str] = set()
+        result = _unique_slug("foo", seen)
+        assert result == "foo"
+        assert "foo" in seen
+
+    def test_appends_counter_on_collision(self) -> None:
+        seen: set[str] = {"foo"}
+        result = _unique_slug("foo", seen)
+        assert result == "foo_2"
+        assert "foo_2" in seen
+
+    def test_increments_counter(self) -> None:
+        seen: set[str] = {"foo", "foo_2"}
+        result = _unique_slug("foo", seen)
+        assert result == "foo_3"
 
 
 # ---------------------------------------------------------------------------
