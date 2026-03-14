@@ -74,6 +74,15 @@ def checkout(branch: str, *, cwd: Path | None = None) -> None:
         raise GitError(msg)
 
 
+def get_current_sha(*, cwd: Path | None = None) -> str:
+    """Return the full SHA of the current HEAD commit."""
+    result = _run_git("rev-parse", "HEAD", cwd=cwd)
+    if result.returncode != 0:
+        msg = f"git rev-parse HEAD failed: {result.stderr.strip()}"
+        raise GitError(msg)
+    return result.stdout.strip()
+
+
 def validate_git_state(
     expected_branch: str,
     *,

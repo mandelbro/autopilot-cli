@@ -287,7 +287,7 @@
 
 - **Title**: Event-driven scheduler triggers
 - **File**: src/autopilot/orchestration/scheduler.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want the scheduler to trigger on events (file changes, git push) not just time intervals, so that cycles run when there is actual work to do.
@@ -334,7 +334,7 @@
 
 - **Title**: Workflow hooks (pre/post cycle and dispatch)
 - **File**: src/autopilot/orchestration/hooks.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want customizable hooks at cycle and dispatch boundaries, so that I can integrate custom checks, notifications, and metrics collection.
