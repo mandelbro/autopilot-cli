@@ -173,8 +173,8 @@ class TriggerManager:
         self._triggers = triggers or []
         self._min_interval = min_interval_seconds
         self._debounce = debounce_seconds
-        self._last_cycle_time: float = 0.0
-        self._last_event_time: float = 0.0
+        self._last_cycle_time: float = -min_interval_seconds
+        self._last_event_time: float = -debounce_seconds
 
     @property
     def strategy(self) -> str:
