@@ -15,12 +15,13 @@ runner = CliRunner()
 
 
 class TestPlanDiscover:
-    def test_discover_no_autopilot_dir(self, tmp_path: Path) -> None:
+    def test_discover_runs_or_fails_gracefully(self, tmp_path: Path) -> None:
         result = runner.invoke(
             app, ["plan", "discover", "myproject", "auth"], catch_exceptions=False
         )
-        # Should fail because no .autopilot dir exists in cwd
-        assert result.exit_code != 0 or "No .autopilot" in result.output or result.exit_code == 0
+        # Either succeeds (if .autopilot exists in cwd) or fails with error
+        if result.exit_code != 0:
+            assert "No .autopilot" in result.output
 
     def test_discover_help(self) -> None:
         result = runner.invoke(app, ["plan", "discover", "--help"])
@@ -85,10 +86,13 @@ class TestPlanEstimate:
 
 
 class TestPlanShow:
-    def test_show_no_autopilot_dir(self) -> None:
+    def test_show_runs_or_fails_gracefully(self) -> None:
         result = runner.invoke(app, ["plan", "show"], catch_exceptions=False)
-        # Either fails or shows no data — both acceptable
-        assert result.exit_code in (0, 1)
+        # Either shows planning state or fails with no .autopilot error
+        if result.exit_code != 0:
+            assert "No .autopilot" in result.output
+        else:
+            assert "Planning State" in result.output
 
     def test_show_help(self) -> None:
         result = runner.invoke(app, ["plan", "show", "--help"])

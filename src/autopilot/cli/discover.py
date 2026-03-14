@@ -26,7 +26,7 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
         topic: str = typer.Argument(..., help="Topic or area to analyze."),
         wait: bool = typer.Option(False, "--wait", "-w", help="Block until discovery completes."),
         output: str = typer.Option(
-            "", "--output", "-o", help="Output path for discovery document."
+            "", "--output", "-o", help="Output directory for discovery document."
         ),
     ) -> None:
         """Launch a Norwood discovery session for technical analysis."""
@@ -97,16 +97,12 @@ def register_discover_commands(plan_app: typer.Typer) -> None:
         for phase in doc.phases:
             console.print(f"  - {phase.name}: {len(phase.deliverables)} deliverables")
 
-        # Convert to tasks
-        start_id = 1
-        if merge:
-            existing_count, _, _ = TaskFileWriter._read_existing_counts(out_dir)
-            start_id = existing_count + 1
-
-        tasks = parser.convert_to_tasks(doc, start_id=start_id)
+        # Convert to tasks — TaskFileWriter handles merge renumbering internally,
+        # so we always generate with start_id=1 and let write_task_files adjust.
+        tasks = parser.convert_to_tasks(doc, start_id=1)
         console.print(f"\n  Generated {len(tasks)} tasks")
 
-        # Write task files
+        # Write task files (merge=True renumbers and appends internally)
         writer = TaskFileWriter()
         files = writer.write_task_files(tasks, out_dir, merge=merge)
 
@@ -199,7 +195,8 @@ def _load_discovery_template(ap_dir: Path, project: str, project_dir: Path) -> s
     from jinja2 import Environment, FileSystemLoader
 
     # Look for the template in the package templates directory
-    package_templates = Path(__file__).resolve().parents[2] / "templates" / "python"
+    # discover.py is at src/autopilot/cli/ — parents[3] is the project root
+    package_templates = Path(__file__).resolve().parents[3] / "templates" / "python"
 
     if not package_templates.is_dir():
         logger.warning("templates_dir_not_found", path=str(package_templates))
@@ -224,17 +221,14 @@ def _load_discovery_template(ap_dir: Path, project: str, project_dir: Path) -> s
 
 
 def _run_discovery_sync(template_content: str, topic: str, output_path: Path) -> None:
-    """Run discovery synchronously (placeholder for agent integration)."""
-    content = (
-        f"# Discovery: {topic}\n\n"
-        f"## Problem Statement\n\n"
-        f"Analysis of: {topic}\n\n"
-        f"## Implementation Phases\n\n"
-        f"### Phase 1: Initial Analysis\n\n"
-        f"- [ ] Analyze current state\n"
-        f"- [ ] Identify key components\n"
-        f"- [ ] Document findings\n"
-    )
+    """Run discovery synchronously using the rendered template.
+
+    Writes the rendered Norwood prompt template as a discovery document
+    with the topic injected as context. Full agent integration is pending;
+    this writes the template as-is for manual review or agent consumption.
+    """
+    header = f"# Discovery: {topic}\n\n"
+    content = header + template_content
     output_path.write_text(content, encoding="utf-8")
 
 
