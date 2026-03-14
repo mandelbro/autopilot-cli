@@ -1,8 +1,13 @@
 """UAT test generator.
 
 Generates pytest test files from task context, converting each acceptance
-criterion into a test function. Uses programmatic string formatting
-(no Jinja2 template files).
+criterion into a test function. Supports four generator categories:
+  A) Acceptance tests (from acceptance criteria)
+  B) Behavioral tests (from user stories)
+  C) Compliance tests (from RFC spec index)
+  D) UX compliance tests (from UX design spec index)
+
+Uses programmatic string formatting (no Jinja2 template files).
 """
 
 from __future__ import annotations
@@ -10,10 +15,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path  # noqa: TC003 — used at runtime
+from typing import TYPE_CHECKING
 
 import structlog
 
 from autopilot.uat.task_context import TaskContext  # noqa: TC001
+
+if TYPE_CHECKING:
+    from autopilot.uat.spec_index import SpecIndex
 
 logger = structlog.get_logger(__name__)
 
@@ -149,6 +158,296 @@ class TestGenerator:
             test_count=generated.test_count,
         )
         return out
+
+
+# ---------------------------------------------------------------------------
+# Behavioral test generator (Category B — Task 071)
+# ---------------------------------------------------------------------------
+
+_USER_STORY_RE = re.compile(
+    r"[Aa]s\s+(?:an?\s+)?(?P<role>.+?),\s+"
+    r"I\s+want\s+(?P<action>.+?),\s+"
+    r"so\s+that\s+(?P<outcome>.+?)\.?$",
+    re.DOTALL,
+)
+
+_BEHAVIORAL_HEADER = '''\
+"""UAT behavioral tests for task {task_id}: {title}.
+
+Auto-generated from user story. Tests follow Given-When-Then structure.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+
+'''
+
+_BEHAVIORAL_TEMPLATE = '''\
+def test_user_story_{task_id}_{slug}() -> None:
+    """Behavioral: {description}"""
+    # Given: {given}
+    # When: {action}
+    # Then: {outcome}
+    pytest.skip("UAT stub — implement behavioral verification")
+
+
+'''
+
+
+def _parse_user_story(story: str) -> dict[str, str]:
+    """Parse a user story into role, action, and outcome components."""
+    m = _USER_STORY_RE.match(story.strip())
+    if m:
+        return {
+            "role": m.group("role").strip(),
+            "action": m.group("action").strip(),
+            "outcome": m.group("outcome").strip(),
+        }
+    return {"role": "user", "action": story.strip(), "outcome": "expected behavior occurs"}
+
+
+class BehavioralTestGenerator:
+    """Generates behavioral tests from user stories (Category B)."""
+
+    def generate_behavioral_tests(self, context: TaskContext) -> GeneratedTestFile:
+        """Generate behavioral pytest tests from a task's user story.
+
+        Parses the user story into Given-When-Then structure and generates
+        a test function for each testable component.
+        """
+        task_id = _sanitize_id(context.task_id)
+        story = context.user_story
+        if not story:
+            logger.warning("no_user_story", task_id=context.task_id)
+            return GeneratedTestFile(
+                file_path=f"tests/uat/test_task_{task_id}_behavioral.py",
+                test_count=0,
+                source_code="",
+            )
+
+        parts = _parse_user_story(story)
+        header = _BEHAVIORAL_HEADER.format(task_id=context.task_id, title=context.title)
+
+        test_names: list[str] = []
+        body_parts: list[str] = []
+
+        # Generate main user story test
+        action_slug = _slugify(parts["action"])
+        name = f"test_user_story_{task_id}_{action_slug}"
+        test_names.append(name)
+        body_parts.append(
+            _BEHAVIORAL_TEMPLATE.format(
+                task_id=task_id,
+                slug=action_slug,
+                description=_escape_docstring(story),
+                given=_escape_docstring(f"user is a {parts['role']}"),
+                action=_escape_docstring(parts["action"]),
+                outcome=_escape_docstring(parts["outcome"]),
+            )
+        )
+
+        # Generate additional tests from acceptance criteria with behavioral keywords
+        seen_slugs = {action_slug}
+        behavioral_keywords = {"workflow", "flow", "process", "step", "when", "then"}
+        for criterion in context.acceptance_criteria:
+            lower = criterion.lower()
+            if any(kw in lower for kw in behavioral_keywords):
+                slug = _slugify(criterion)
+                base_slug = slug
+                counter = 2
+                while slug in seen_slugs:
+                    slug = f"{base_slug}_{counter}"
+                    counter += 1
+                seen_slugs.add(slug)
+
+                name = f"test_user_story_{task_id}_{slug}"
+                test_names.append(name)
+                body_parts.append(
+                    _BEHAVIORAL_TEMPLATE.format(
+                        task_id=task_id,
+                        slug=slug,
+                        description=_escape_docstring(criterion),
+                        given=_escape_docstring(f"user is a {parts['role']}"),
+                        action=_escape_docstring(criterion),
+                        outcome=_escape_docstring(parts["outcome"]),
+                    )
+                )
+
+        source_code = header + "".join(body_parts)
+        file_path = f"tests/uat/test_task_{task_id}_behavioral.py"
+
+        return GeneratedTestFile(
+            file_path=file_path,
+            test_count=len(test_names),
+            test_names=test_names,
+            source_code=source_code,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Compliance test generator (Category C — Task 072)
+# ---------------------------------------------------------------------------
+
+_COMPLIANCE_HEADER = '''\
+"""UAT compliance tests for task {task_id}: {title}.
+
+Auto-generated from RFC specification index. Tests verify implementation
+against technical specification requirements.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+
+'''
+
+_COMPLIANCE_TEMPLATE = '''\
+def test_rfc_{section_slug}_{req_slug}() -> None:
+    """Compliance: {spec_id} — {requirement}"""
+    # Spec: {spec_id} ({section})
+    # Requirement: {requirement}
+    pytest.skip("UAT stub — implement compliance verification")
+
+
+'''
+
+
+class ComplianceTestGenerator:
+    """Generates specification compliance tests (Category C)."""
+
+    def generate_compliance_tests(
+        self, context: TaskContext, spec_index: SpecIndex
+    ) -> GeneratedTestFile:
+        """Generate compliance tests from a spec index.
+
+        For each spec entry relevant to the task, generates a test verifying
+        the implementation meets the specification requirement.
+        """
+        task_id = _sanitize_id(context.task_id)
+        header = _COMPLIANCE_HEADER.format(task_id=context.task_id, title=context.title)
+
+        test_names: list[str] = []
+        body_parts: list[str] = []
+        seen_slugs: set[str] = set()
+
+        for entry in spec_index.entries:
+            section_slug = _slugify(entry.section, max_length=30)
+            req_slug = _slugify(entry.requirement_text, max_length=30)
+
+            combined = f"{section_slug}_{req_slug}"
+            base = combined
+            counter = 2
+            while combined in seen_slugs:
+                combined = f"{base}_{counter}"
+                counter += 1
+            seen_slugs.add(combined)
+
+            name = f"test_rfc_{combined}"
+            test_names.append(name)
+            body_parts.append(
+                _COMPLIANCE_TEMPLATE.format(
+                    section_slug=section_slug,
+                    req_slug=combined.split("_", 1)[-1] if "_" in combined else combined,
+                    spec_id=_escape_docstring(entry.spec_id),
+                    section=_escape_docstring(entry.section),
+                    requirement=_escape_docstring(entry.requirement_text[:200]),
+                )
+            )
+
+        source_code = header + "".join(body_parts) if body_parts else ""
+        file_path = f"tests/uat/test_task_{task_id}_compliance.py"
+
+        return GeneratedTestFile(
+            file_path=file_path,
+            test_count=len(test_names),
+            test_names=test_names,
+            source_code=source_code,
+        )
+
+
+# ---------------------------------------------------------------------------
+# UX compliance test generator (Category D — Task 073)
+# ---------------------------------------------------------------------------
+
+_UX_HEADER = '''\
+"""UAT UX compliance tests for task {task_id}: {title}.
+
+Auto-generated from UX design specification index. Tests verify CLI output,
+REPL behavior, and terminal dimensions against UX design spec.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+
+'''
+
+_UX_TEMPLATE = '''\
+def test_ux_{section_slug}_{req_slug}() -> None:
+    """UX Compliance: {spec_id} — {requirement}"""
+    # Spec: {spec_id} ({section})
+    # Requirement: {requirement}
+    pytest.skip("UAT stub — implement UX compliance verification")
+
+
+'''
+
+
+class UXTestGenerator:
+    """Generates UX compliance tests (Category D)."""
+
+    def generate_ux_tests(
+        self, context: TaskContext, ux_index: SpecIndex
+    ) -> GeneratedTestFile:
+        """Generate UX compliance tests from a UX design spec index.
+
+        Generates tests for dashboard constraints, prompt format,
+        output patterns, and notification tiers.
+        """
+        task_id = _sanitize_id(context.task_id)
+        header = _UX_HEADER.format(task_id=context.task_id, title=context.title)
+
+        test_names: list[str] = []
+        body_parts: list[str] = []
+        seen_slugs: set[str] = set()
+
+        for entry in ux_index.entries:
+            section_slug = _slugify(entry.section, max_length=30)
+            req_slug = _slugify(entry.requirement_text, max_length=30)
+
+            combined = f"{section_slug}_{req_slug}"
+            base = combined
+            counter = 2
+            while combined in seen_slugs:
+                combined = f"{base}_{counter}"
+                counter += 1
+            seen_slugs.add(combined)
+
+            name = f"test_ux_{combined}"
+            test_names.append(name)
+            body_parts.append(
+                _UX_TEMPLATE.format(
+                    section_slug=section_slug,
+                    req_slug=combined.split("_", 1)[-1] if "_" in combined else combined,
+                    spec_id=_escape_docstring(entry.spec_id),
+                    section=_escape_docstring(entry.section),
+                    requirement=_escape_docstring(entry.requirement_text[:200]),
+                )
+            )
+
+        source_code = header + "".join(body_parts) if body_parts else ""
+        file_path = f"tests/uat/test_task_{task_id}_ux.py"
+
+        return GeneratedTestFile(
+            file_path=file_path,
+            test_count=len(test_names),
+            test_names=test_names,
+            source_code=source_code,
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -14,7 +14,7 @@
 
 - **Title**: UAT behavioral test generator (from user stories)
 - **File**: src/autopilot/uat/test_generator.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Test Generator Category B (Behavioral Tests)
 
@@ -60,7 +60,7 @@
 
 - **Title**: UAT compliance test generator (from RFC specs)
 - **File**: src/autopilot/uat/test_generator.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Test Generator Category C (Specification Compliance Tests)
 
@@ -105,7 +105,7 @@
 
 - **Title**: UAT UX compliance test generator
 - **File**: src/autopilot/uat/test_generator.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: Test Generator Category D (UX Compliance Tests)
 
