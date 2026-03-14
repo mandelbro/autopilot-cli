@@ -133,10 +133,10 @@ class TraceabilityStore:
         spec_id: str,
         *,
         uat_status: str = "",
-        uat_score: float = 0.0,
+        uat_score: float | None = None,
         test_files: list[str] | None = None,
         implementing_tasks: list[str] | None = None,
-        notes: str = "",
+        notes: str | None = None,
     ) -> bool:
         """Update an existing entry by *spec_id*.
 
@@ -153,13 +153,13 @@ class TraceabilityStore:
                         )
                         return False
                     entry.uat_status = uat_status
-                if uat_score:
+                if uat_score is not None:
                     entry.uat_score = uat_score
                 if test_files is not None:
                     entry.test_files = test_files
                 if implementing_tasks is not None:
                     entry.implementing_tasks = implementing_tasks
-                if notes:
+                if notes is not None:
                     entry.notes = notes
                 if uat_status in {"pass", "fail", "partial"}:
                     entry.last_tested = _now_iso()

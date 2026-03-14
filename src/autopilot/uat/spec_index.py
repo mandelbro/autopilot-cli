@@ -108,27 +108,16 @@ class SpecIndexBuilder:
     """Builds a structured index from RFC/specification markdown files."""
 
     def build_rfc_index(self, rfc_path: Path) -> SpecIndex:
-        """Parse an RFC markdown file and extract a structured requirement index.
+        """Parse an RFC markdown file and extract a structured requirement index."""
+        return self._build_index(rfc_path, document_prefix="")
 
-        Extracts sections by heading hierarchy (##, ###) and identifies
-        requirement-like sentences within each section.
-        """
-        if not rfc_path.exists():
-            logger.warning("rfc_file_not_found", path=str(rfc_path))
-            return SpecIndex(generated_at=_now_iso())
+    def build_discovery_index(self, path: Path) -> SpecIndex:
+        """Parse a discovery markdown file and extract requirements."""
+        return self._build_index(path, document_prefix="discovery-")
 
-        text = rfc_path.read_text(encoding="utf-8")
-        document = rfc_path.stem
-        entries = self._extract_entries(text, document)
-
-        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
-
-        return SpecIndex(
-            entries=entries,
-            generated_at=_now_iso(),
-            total_requirements=len(entries),
-            testable_count=testable,
-        )
+    def build_ux_index(self, path: Path) -> SpecIndex:
+        """Parse a UX design markdown file and extract requirements."""
+        return self._build_index(path, document_prefix="ux-design-")
 
     def save_index(self, index: SpecIndex, output: Path | TextIO) -> None:
         """Serialize a SpecIndex to JSON."""
@@ -148,54 +137,6 @@ class SpecIndexBuilder:
             generated_at=data.get("generated_at", ""),
             total_requirements=data.get("total_requirements", 0),
             testable_count=data.get("testable_count", 0),
-        )
-
-    def build_discovery_index(self, path: Path) -> SpecIndex:
-        """Parse a discovery markdown file and extract a structured requirement index.
-
-        Extracts ADR decisions, architecture requirements, and risk mitigations
-        from a discovery document using the same heading/requirement parsing as
-        ``build_rfc_index``.
-        """
-        if not path.exists():
-            logger.warning("discovery_file_not_found", path=str(path))
-            return SpecIndex(generated_at=_now_iso())
-
-        text = path.read_text(encoding="utf-8")
-        document = f"discovery-{path.stem}"
-        entries = self._extract_entries(text, document)
-
-        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
-
-        return SpecIndex(
-            entries=entries,
-            generated_at=_now_iso(),
-            total_requirements=len(entries),
-            testable_count=testable,
-        )
-
-    def build_ux_index(self, path: Path) -> SpecIndex:
-        """Parse a UX design markdown file and extract a structured requirement index.
-
-        Extracts REPL behavior, dashboard layout, workflow UX, and error handling
-        requirements from a UX design document using the same heading/requirement
-        parsing as ``build_rfc_index``.
-        """
-        if not path.exists():
-            logger.warning("ux_file_not_found", path=str(path))
-            return SpecIndex(generated_at=_now_iso())
-
-        text = path.read_text(encoding="utf-8")
-        document = f"ux-design-{path.stem}"
-        entries = self._extract_entries(text, document)
-
-        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
-
-        return SpecIndex(
-            entries=entries,
-            generated_at=_now_iso(),
-            total_requirements=len(entries),
-            testable_count=testable,
         )
 
     def merge_indices(self, *indices: SpecIndex) -> SpecIndex:
@@ -218,6 +159,29 @@ class SpecIndexBuilder:
         )
 
     # -- private helpers ----------------------------------------------------
+
+    def _build_index(self, path: Path, *, document_prefix: str) -> SpecIndex:
+        """Parse a markdown file and extract a structured requirement index.
+
+        Args:
+            path: Path to the markdown specification file.
+            document_prefix: Prefix prepended to the file stem for document naming.
+        """
+        if not path.exists():
+            logger.warning("spec_file_not_found", path=str(path))
+            return SpecIndex(generated_at=_now_iso())
+
+        text = path.read_text(encoding="utf-8")
+        document = f"{document_prefix}{path.stem}" if document_prefix else path.stem
+        entries = self._extract_entries(text, document)
+        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
+
+        return SpecIndex(
+            entries=entries,
+            generated_at=_now_iso(),
+            total_requirements=len(entries),
+            testable_count=testable,
+        )
 
     def _extract_entries(self, text: str, document: str) -> list[SpecEntry]:
         """Extract requirement entries from markdown text."""
