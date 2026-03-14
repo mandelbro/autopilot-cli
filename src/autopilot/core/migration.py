@@ -139,9 +139,7 @@ class MigrationEngine:
                 return dict(yaml.safe_load(text) or {})
         return {}
 
-    def _copy_agents(
-        self, source: Path, target: Path, *, dry_run: bool
-    ) -> list[str]:
+    def _copy_agents(self, source: Path, target: Path, *, dry_run: bool) -> list[str]:
         """Copy agent markdown files from ``agents/`` subdirectory."""
         agents_src = source / "agents"
         if not agents_src.is_dir():
@@ -159,9 +157,7 @@ class MigrationEngine:
 
         return copied
 
-    def _copy_board(
-        self, source: Path, target: Path, *, dry_run: bool
-    ) -> list[str]:
+    def _copy_board(self, source: Path, target: Path, *, dry_run: bool) -> list[str]:
         """Copy board markdown files from ``board/`` subdirectory."""
         board_src = source / "board"
         if not board_src.is_dir():
@@ -179,9 +175,7 @@ class MigrationEngine:
 
         return copied
 
-    def _convert_state_files(
-        self, source: Path, target: Path, *, dry_run: bool
-    ) -> bool:
+    def _convert_state_files(self, source: Path, target: Path, *, dry_run: bool) -> bool:
         """Convert JSON state files to SQLite entries.
 
         Looks for ``usage-tracker.json`` and ``hive-sessions.json`` in the
@@ -230,9 +224,7 @@ class MigrationEngine:
             _log.debug("State file conversion failed (non-critical)", exc_info=True)
             return False
 
-    def _register_project(
-        self, project_root: Path, config: dict[str, Any]
-    ) -> None:
+    def _register_project(self, project_root: Path, config: dict[str, Any]) -> None:
         """Register the migrated project in the global registry."""
         try:
             from autopilot.core.project import ProjectRegistry

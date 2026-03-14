@@ -58,17 +58,13 @@ class TestDetectRepengineLayout:
         (tmp_path / ".autopilot").mkdir()
         assert engine.detect_repengine_layout(tmp_path) is False
 
-    def test_rejects_when_autopilot_is_file(
-        self, tmp_path: Path, engine: MigrationEngine
-    ) -> None:
+    def test_rejects_when_autopilot_is_file(self, tmp_path: Path, engine: MigrationEngine) -> None:
         (tmp_path / "autopilot").write_text("not a directory")
         assert engine.detect_repengine_layout(tmp_path) is False
 
 
 class TestMigrate:
-    def test_creates_dot_autopilot_structure(
-        self, tmp_path: Path, engine: MigrationEngine
-    ) -> None:
+    def test_creates_dot_autopilot_structure(self, tmp_path: Path, engine: MigrationEngine) -> None:
         _make_repengine_layout(tmp_path)
         result = engine.migrate(tmp_path)
 
@@ -116,9 +112,7 @@ class TestMigrate:
         assert result.state_converted is True
         assert (tmp_path / ".autopilot" / "autopilot.db").exists()
 
-    def test_preserves_original_directory(
-        self, tmp_path: Path, engine: MigrationEngine
-    ) -> None:
+    def test_preserves_original_directory(self, tmp_path: Path, engine: MigrationEngine) -> None:
         _make_repengine_layout(tmp_path)
         engine.migrate(tmp_path)
 

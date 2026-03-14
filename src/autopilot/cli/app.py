@@ -243,7 +243,9 @@ def review() -> None:
 @app.command()
 def migrate(
     project_root: str = typer.Option(".", "--project-root", "-r", help="Project root directory."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would change without modifying anything."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would change without modifying anything."
+    ),
 ) -> None:
     """Migrate from RepEngine autopilot/ layout to .autopilot/ format."""
     from pathlib import Path

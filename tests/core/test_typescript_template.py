@@ -89,16 +89,12 @@ class TestAgentTemplates:
             "agents/norwood-discovery.md",
         ],
     )
-    def test_agent_template_renders(
-        self, ts_env: Environment, template_name: str
-    ) -> None:
+    def test_agent_template_renders(self, ts_env: Environment, template_name: str) -> None:
         template = ts_env.get_template(template_name)
         rendered = template.render(**_RENDER_CONTEXT)
         assert "test-ts-project" in rendered
 
-    def test_project_leader_references_typescript_gates(
-        self, ts_env: Environment
-    ) -> None:
+    def test_project_leader_references_typescript_gates(self, ts_env: Environment) -> None:
         template = ts_env.get_template("agents/project-leader.md")
         rendered = template.render(**_RENDER_CONTEXT)
         assert "pnpm lint" in rendered
@@ -106,9 +102,7 @@ class TestAgentTemplates:
         assert "pnpm test" in rendered
         assert "TypeScript" in rendered
 
-    def test_engineering_manager_references_typescript_tools(
-        self, ts_env: Environment
-    ) -> None:
+    def test_engineering_manager_references_typescript_tools(self, ts_env: Environment) -> None:
         template = ts_env.get_template("agents/engineering-manager.md")
         rendered = template.render(**_RENDER_CONTEXT)
         assert "pnpm lint" in rendered
@@ -117,9 +111,7 @@ class TestAgentTemplates:
         assert "ESLint" in rendered
         assert "TypeScript" in rendered
 
-    def test_technical_architect_references_typescript(
-        self, ts_env: Environment
-    ) -> None:
+    def test_technical_architect_references_typescript(self, ts_env: Environment) -> None:
         template = ts_env.get_template("agents/technical-architect.md")
         rendered = template.render(**_RENDER_CONTEXT)
         assert "TypeScript" in rendered
@@ -141,9 +133,7 @@ class TestAgentTemplates:
         rendered = template.render(**_RENDER_CONTEXT)
         assert "test-ts-project" in rendered
 
-    def test_devops_agent_typescript_error_patterns(
-        self, ts_env: Environment
-    ) -> None:
+    def test_devops_agent_typescript_error_patterns(self, ts_env: Environment) -> None:
         template = ts_env.get_template("agents/devops-agent.md")
         rendered = template.render(**_RENDER_CONTEXT)
         assert "Cannot find module" in rendered
@@ -180,16 +170,12 @@ class TestBoardTemplates:
             "board/announcements.md",
         ],
     )
-    def test_board_template_renders(
-        self, ts_env: Environment, template_name: str
-    ) -> None:
+    def test_board_template_renders(self, ts_env: Environment, template_name: str) -> None:
         template = ts_env.get_template(template_name)
         rendered = template.render(**_RENDER_CONTEXT)
         assert "test-ts-project" in rendered
 
-    def test_project_board_has_expected_sections(
-        self, ts_env: Environment
-    ) -> None:
+    def test_project_board_has_expected_sections(self, ts_env: Environment) -> None:
         template = ts_env.get_template("board/project-board.md")
         rendered = template.render(**_RENDER_CONTEXT)
         assert "Sprint Status" in rendered
