@@ -150,7 +150,7 @@
 
 - **Title**: Global resource broker for multi-project orchestration
 - **File**: src/autopilot/orchestration/resource_broker.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator running multiple projects, I want global resource limits, so that concurrent daemons do not exceed machine capacity or Claude Max plan limits.
@@ -197,7 +197,7 @@
 
 - **Title**: Per-project usage limits and priority weights
 - **File**: src/autopilot/orchestration/usage.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want per-project cycle budgets and priority weights, so that important projects get more cycles and less critical ones are rate-limited.
@@ -239,7 +239,7 @@
 
 - **Title**: Cross-project reporting dashboard
 - **File**: src/autopilot/reporting/quality.py, src/autopilot/cli/display.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect managing multiple projects, I want a cross-project dashboard, so that I can see velocity, quality, and operational health across all my autonomous projects.
