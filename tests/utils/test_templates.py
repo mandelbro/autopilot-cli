@@ -70,6 +70,7 @@ class TestAgentTemplates:
             "technical-architect.md",
             "product-director.md",
             "devops-agent.md",
+            "norwood-discovery.md",
         }
         actual = {f.name for f in templates_dir.iterdir() if f.suffix == ".md"}
         assert expected == actual
