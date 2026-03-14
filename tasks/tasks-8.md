@@ -150,7 +150,7 @@
 
 - **Title**: UAT batch mode with swarm coordination
 - **File**: src/autopilot/uat/batch.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Parallel Execution Model, Swarm Coordination
 
@@ -200,7 +200,7 @@
 
 - **Title**: UAT automatic trigger hooks (post-task-complete)
 - **File**: src/autopilot/uat/triggers.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 - **Spec References**: UAT Discovery: UAT Trigger System, Automatic mode
 
@@ -246,7 +246,7 @@
 
 - **Title**: UAT feedback loop (advisory and gated modes)
 - **File**: src/autopilot/uat/feedback.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Feedback Loop, Advisory mode, Gated mode
 
@@ -392,7 +392,7 @@
 
 - **Title**: Discovery-to-task conversion pipeline (end-to-end)
 - **File**: src/autopilot/core/discovery.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want automated conversion from discovery documents to structured tasks, so that the entire planning pipeline flows seamlessly from analysis to execution.
@@ -439,7 +439,7 @@
 
 - **Title**: Shelly estimation agent integration
 - **File**: src/autopilot/core/estimation.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want AI-assisted task estimation, so that sprint points are consistently assessed based on complexity analysis rather than gut feeling.

@@ -1,7 +1,8 @@
-"""Discovery-to-task conversion pipeline (Task 025).
+"""Discovery-to-task conversion pipeline (Tasks 025, 079).
 
 Parses discovery markdown documents into structured phases and deliverables,
 then converts them into Task objects and writes properly formatted task files.
+Includes the end-to-end DiscoveryConverter pipeline (Task 079).
 """
 
 from __future__ import annotations
@@ -10,7 +11,11 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path  # noqa: TC003 — used at runtime
 
+import structlog
+
 from autopilot.core.task import Task
+
+logger = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Data models
@@ -421,3 +426,134 @@ class TaskFileWriter:
             f"\n"
             f"{all_entries}\n"
         )
+
+
+# ---------------------------------------------------------------------------
+# DiscoveryConverter — end-to-end pipeline (Task 079)
+# ---------------------------------------------------------------------------
+
+# Patterns for extracting spec references from discovery context
+_SPEC_REF_RE = re.compile(
+    r"(?:RFC|Discovery|UX Design)\s+(?:Section\s+)?[\d.]+",
+    re.IGNORECASE,
+)
+
+
+class DiscoveryConverter:
+    """End-to-end pipeline: parse discovery -> extract phases -> generate tasks -> write files.
+
+    Wraps DiscoveryParser and TaskFileWriter with additional spec reference
+    extraction and proportional point distribution.
+    """
+
+    def __init__(self) -> None:
+        self._parser = DiscoveryParser()
+        self._writer = TaskFileWriter()
+
+    def parse(self, path: Path) -> DiscoveryDocument:
+        """Parse a discovery markdown file into a structured document."""
+        logger.info("discovery_parse", path=str(path))
+        return self._parser.parse_discovery(path)
+
+    def extract_phases(self, doc: DiscoveryDocument) -> list[Phase]:
+        """Extract implementation phases from a parsed discovery document."""
+        return list(doc.phases)
+
+    def generate_tasks(
+        self,
+        phases: list[Phase],
+        *,
+        project_title: str = "",
+        start_id: int = 1,
+    ) -> list[Task]:
+        """Create tasks from phases with spec references and proportional points.
+
+        Each deliverable in each phase becomes a task. Spec references are
+        extracted from the phase context text. Points are distributed
+        proportionally from phase effort estimates.
+        """
+        tasks: list[Task] = []
+        task_num = start_id
+
+        for phase in phases:
+            num_deliverables = len(phase.deliverables) or 1
+            per_task_points = _estimate_points(phase.effort_estimate, num_deliverables)
+
+            # Extract any spec references from the phase name and effort
+            phase_context = f"{phase.name} {phase.effort_estimate}"
+            spec_refs = _SPEC_REF_RE.findall(phase_context)
+
+            for deliverable in phase.deliverables:
+                task_id = f"{task_num:03d}"
+
+                # Also check deliverable text for spec references
+                deliverable_refs = _SPEC_REF_RE.findall(deliverable)
+                all_refs = spec_refs + deliverable_refs
+                combined_refs = ", ".join(dict.fromkeys(all_refs)) if all_refs else ""
+
+                prompt = f"**Objective:** {deliverable}\n\n**Phase:** {phase.name}\n"
+                if project_title:
+                    prompt += f"**Discovery:** {project_title}\n"
+                if combined_refs:
+                    prompt += f"\n**Specification References:**\n- {combined_refs}\n"
+
+                tasks.append(
+                    Task(
+                        id=task_id,
+                        title=deliverable,
+                        sprint_points=per_task_points,
+                        user_story=(
+                            f"As a developer, I want {deliverable.lower()}, "
+                            f"so that the {phase.name} phase is complete."
+                        ),
+                        outcome=f"Delivers: {deliverable}",
+                        prompt=prompt,
+                        spec_references=[combined_refs] if combined_refs else [],
+                    )
+                )
+                task_num += 1
+
+        logger.info("discovery_tasks_generated", count=len(tasks))
+        return tasks
+
+    def write_files(
+        self,
+        tasks: list[Task],
+        output_dir: Path,
+        *,
+        merge: bool = False,
+    ) -> list[Path]:
+        """Write tasks to task files, optionally merging with existing files."""
+        logger.info(
+            "discovery_write_files",
+            count=len(tasks),
+            output=str(output_dir),
+            merge=merge,
+        )
+        return self._writer.write_task_files(tasks, output_dir, merge=merge)
+
+    def convert(
+        self,
+        discovery_path: Path,
+        output_dir: Path,
+        *,
+        merge: bool = False,
+    ) -> list[Path]:
+        """Full end-to-end conversion: parse -> extract -> generate -> write.
+
+        Convenience method that chains all pipeline steps.
+        """
+        doc = self.parse(discovery_path)
+        phases = self.extract_phases(doc)
+
+        start_id = 1
+        if merge:
+            existing_count, _, _ = TaskFileWriter._read_existing_counts(output_dir)
+            start_id = existing_count + 1
+
+        tasks = self.generate_tasks(
+            phases,
+            project_title=doc.title,
+            start_id=start_id,
+        )
+        return self.write_files(tasks, output_dir, merge=merge)
