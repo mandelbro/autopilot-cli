@@ -297,7 +297,7 @@
 
 - **Title**: Norwood discovery agent prompt template
 - **File**: templates/python/agents/norwood-discovery.md
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want a discovery agent template, so that `autopilot discover` launches a properly configured Norwood session for technical analysis.
@@ -342,7 +342,7 @@
 
 - **Title**: Discover CLI commands
 - **File**: src/autopilot/cli/discover.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want to launch and monitor discovery sessions from the CLI, so that technical analysis happens within the autopilot workflow and feeds into task creation.
