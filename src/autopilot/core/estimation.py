@@ -180,10 +180,7 @@ class EstimationAgent:
             factors.append("No significant complexity indicators found")
 
         confidence = min(0.95, 0.5 + (len(factors) * 0.1))
-        rationale = (
-            f"Estimated at {recommended} points based on: "
-            + "; ".join(factors[:5])
-        )
+        rationale = f"Estimated at {recommended} points based on: " + "; ".join(factors[:5])
 
         logger.info(
             "task_estimated",
@@ -210,9 +207,7 @@ class EstimationAgent:
         Returns a list of EstimationResult in the same order as input tasks.
         """
         logger.info("batch_estimate_start", count=len(tasks))
-        results = [
-            self.estimate_task(task, project_context) for task in tasks
-        ]
+        results = [self.estimate_task(task, project_context) for task in tasks]
         logger.info(
             "batch_estimate_complete",
             count=len(results),

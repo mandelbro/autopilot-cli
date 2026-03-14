@@ -477,9 +477,7 @@ class DiscoveryConverter:
 
         for phase in phases:
             num_deliverables = len(phase.deliverables) or 1
-            per_task_points = _estimate_points(
-                phase.effort_estimate, num_deliverables
-            )
+            per_task_points = _estimate_points(phase.effort_estimate, num_deliverables)
 
             # Extract any spec references from the phase name and effort
             phase_context = f"{phase.name} {phase.effort_estimate}"
@@ -493,10 +491,7 @@ class DiscoveryConverter:
                 all_refs = spec_refs + deliverable_refs
                 combined_refs = ", ".join(dict.fromkeys(all_refs)) if all_refs else ""
 
-                prompt = (
-                    f"**Objective:** {deliverable}\n\n"
-                    f"**Phase:** {phase.name}\n"
-                )
+                prompt = f"**Objective:** {deliverable}\n\n**Phase:** {phase.name}\n"
                 if project_title:
                     prompt += f"**Discovery:** {project_title}\n"
                 if combined_refs:

@@ -51,7 +51,9 @@ class TestDiscoveryConverter:
     def test_generate_tasks_from_phases(self) -> None:
         converter = DiscoveryConverter()
         phases = [
-            Phase(name="Setup", deliverables=["Init project", "Add config"], effort_estimate="small"),
+            Phase(
+                name="Setup", deliverables=["Init project", "Add config"], effort_estimate="small"
+            ),
         ]
         tasks = converter.generate_tasks(phases, project_title="Test")
         assert len(tasks) == 2
