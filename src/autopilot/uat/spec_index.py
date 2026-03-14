@@ -1,7 +1,7 @@
 """UAT specification index builder.
 
-Parses RFC and specification markdown documents to build a structured index
-of requirements with section hierarchy, enabling traceability from tasks
+Parses RFC, discovery, and UX-design markdown documents to build a structured
+index of requirements with section hierarchy, enabling traceability from tasks
 to specific specification sections.
 """
 
@@ -148,6 +148,73 @@ class SpecIndexBuilder:
             generated_at=data.get("generated_at", ""),
             total_requirements=data.get("total_requirements", 0),
             testable_count=data.get("testable_count", 0),
+        )
+
+    def build_discovery_index(self, path: Path) -> SpecIndex:
+        """Parse a discovery markdown file and extract a structured requirement index.
+
+        Extracts ADR decisions, architecture requirements, and risk mitigations
+        from a discovery document using the same heading/requirement parsing as
+        ``build_rfc_index``.
+        """
+        if not path.exists():
+            logger.warning("discovery_file_not_found", path=str(path))
+            return SpecIndex(generated_at=_now_iso())
+
+        text = path.read_text(encoding="utf-8")
+        document = f"discovery-{path.stem}"
+        entries = self._extract_entries(text, document)
+
+        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
+
+        return SpecIndex(
+            entries=entries,
+            generated_at=_now_iso(),
+            total_requirements=len(entries),
+            testable_count=testable,
+        )
+
+    def build_ux_index(self, path: Path) -> SpecIndex:
+        """Parse a UX design markdown file and extract a structured requirement index.
+
+        Extracts REPL behavior, dashboard layout, workflow UX, and error handling
+        requirements from a UX design document using the same heading/requirement
+        parsing as ``build_rfc_index``.
+        """
+        if not path.exists():
+            logger.warning("ux_file_not_found", path=str(path))
+            return SpecIndex(generated_at=_now_iso())
+
+        text = path.read_text(encoding="utf-8")
+        document = f"ux-design-{path.stem}"
+        entries = self._extract_entries(text, document)
+
+        testable = sum(1 for e in entries if _is_testable(e.requirement_text))
+
+        return SpecIndex(
+            entries=entries,
+            generated_at=_now_iso(),
+            total_requirements=len(entries),
+            testable_count=testable,
+        )
+
+    def merge_indices(self, *indices: SpecIndex) -> SpecIndex:
+        """Combine multiple :class:`SpecIndex` objects into one.
+
+        Concatenates all entries, recalculates totals, and sets a fresh
+        ``generated_at`` timestamp.
+        """
+        all_entries: list[SpecEntry] = []
+        for idx in indices:
+            all_entries.extend(idx.entries)
+
+        testable = sum(1 for e in all_entries if _is_testable(e.requirement_text))
+
+        return SpecIndex(
+            entries=all_entries,
+            generated_at=_now_iso(),
+            total_requirements=len(all_entries),
+            testable_count=testable,
         )
 
     # -- private helpers ----------------------------------------------------
