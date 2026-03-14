@@ -67,9 +67,7 @@ class BatchUAT:
         self._workers = max(1, workers)
         self._timeout = timeout
         self._max_tests_per_sp = max_tests_per_sp
-        self._pipeline = UATPipeline(
-            timeout=timeout, max_tests_per_sp=max_tests_per_sp
-        )
+        self._pipeline = UATPipeline(timeout=timeout, max_tests_per_sp=max_tests_per_sp)
 
     def run_sprint(self, sprint_id: str, project_dir: Path) -> BatchResult:
         """Run UAT for all completed tasks in a sprint.
@@ -82,9 +80,7 @@ class BatchUAT:
         task_ids = self._find_completed_task_ids(project_dir)
         return self._run_batch(task_ids, project_dir)
 
-    def run_range(
-        self, start_id: str, end_id: str, project_dir: Path
-    ) -> BatchResult:
+    def run_range(self, start_id: str, end_id: str, project_dir: Path) -> BatchResult:
         """Run UAT for a range of completed tasks (e.g. '040' to '050')."""
         logger.info("batch_uat_range", start=start_id, end=end_id)
         all_ids = self._find_completed_task_ids(project_dir)
@@ -139,9 +135,7 @@ class BatchUAT:
 
         return completed
 
-    def _run_batch(
-        self, task_ids: list[str], project_dir: Path
-    ) -> BatchResult:
+    def _run_batch(self, task_ids: list[str], project_dir: Path) -> BatchResult:
         """Execute UAT pipeline for multiple tasks in parallel."""
         if not task_ids:
             logger.warning("batch_uat_no_tasks")
@@ -154,12 +148,9 @@ class BatchUAT:
         passed = 0
         failed = 0
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=self._workers
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self._workers) as executor:
             future_to_id = {
-                executor.submit(self._pipeline.run, tid, project_dir): tid
-                for tid in task_ids
+                executor.submit(self._pipeline.run, tid, project_dir): tid for tid in task_ids
             }
 
             for future in concurrent.futures.as_completed(future_to_id):

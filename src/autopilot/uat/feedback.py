@@ -86,9 +86,7 @@ class FeedbackLoop:
             return "PARTIAL"
         return "FAIL"
 
-    def _update_task_uat_status(
-        self, task_id: str, status: str, project_dir: Path
-    ) -> None:
+    def _update_task_uat_status(self, task_id: str, status: str, project_dir: Path) -> None:
         """Update the UAT Status field in the task file."""
         task_dir = project_dir / "tasks"
         parser = TaskParser()
@@ -110,9 +108,7 @@ class FeedbackLoop:
                     self._write_uat_status(file_path, task_id, status)
                     return
 
-    def _write_uat_status(
-        self, file_path: Path, task_id: str, status: str
-    ) -> None:
+    def _write_uat_status(self, file_path: Path, task_id: str, status: str) -> None:
         """Write or update the UAT Status field in a task file."""
         text = file_path.read_text(encoding="utf-8")
         lines = text.split("\n")
@@ -151,9 +147,7 @@ class FeedbackLoop:
 
         file_path.write_text("\n".join(result_lines), encoding="utf-8")
 
-    def _revert_task(
-        self, task_id: str, result: UATResult, project_dir: Path
-    ) -> None:
+    def _revert_task(self, task_id: str, result: UATResult, project_dir: Path) -> None:
         """Revert task completion status and append UAT feedback section."""
         logger.warning(
             "uat_gated_revert",
@@ -201,9 +195,7 @@ class FeedbackLoop:
                     self._write_feedback(file_path, task_id, result)
                     return
 
-    def _write_feedback(
-        self, file_path: Path, task_id: str, result: UATResult
-    ) -> None:
+    def _write_feedback(self, file_path: Path, task_id: str, result: UATResult) -> None:
         """Insert UAT feedback section before the task's closing separator."""
         text = file_path.read_text(encoding="utf-8")
         lines = text.split("\n")

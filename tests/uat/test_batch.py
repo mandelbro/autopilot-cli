@@ -89,7 +89,9 @@ class TestBatchUAT:
     @patch("autopilot.uat.batch.UATPipeline")
     def test_run_all_parallel(self, mock_pipeline_cls: MagicMock, project_dir: Path) -> None:
         mock_pipeline = MagicMock()
-        mock_pipeline.run.return_value = UATResult(overall_pass=True, score=1.0, test_count=1, passed=1)
+        mock_pipeline.run.return_value = UATResult(
+            overall_pass=True, score=1.0, test_count=1, passed=1
+        )
         mock_pipeline_cls.return_value = mock_pipeline
 
         batch = BatchUAT(workers=2)
@@ -104,7 +106,9 @@ class TestBatchUAT:
     @patch("autopilot.uat.batch.UATPipeline")
     def test_run_range(self, mock_pipeline_cls: MagicMock, project_dir: Path) -> None:
         mock_pipeline = MagicMock()
-        mock_pipeline.run.return_value = UATResult(overall_pass=True, score=1.0, test_count=1, passed=1)
+        mock_pipeline.run.return_value = UATResult(
+            overall_pass=True, score=1.0, test_count=1, passed=1
+        )
         mock_pipeline_cls.return_value = mock_pipeline
 
         batch = BatchUAT()
