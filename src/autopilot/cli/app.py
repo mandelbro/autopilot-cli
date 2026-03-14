@@ -9,6 +9,7 @@ from __future__ import annotations
 import typer
 
 from autopilot import __version__
+from autopilot.cli.discover import register_discover_commands
 from autopilot.cli.enforce import register_enforce_commands
 from autopilot.cli.project import project_app
 from autopilot.cli.session import register_session_commands
@@ -252,6 +253,10 @@ register_session_commands(session_app)
 # -- Enforcement commands (registered from enforce module) ----------------------
 
 register_enforce_commands(enforce_app)
+
+# -- Discovery commands (registered from discover module) ----------------------
+
+register_discover_commands(plan_app)
 
 # -- Stub subcommands for Phase 2+ -------------------------------------------
 
