@@ -117,6 +117,9 @@ class CIPipelineGenerator:
         """
         if python_versions is None:
             python_versions = ["3.12"]
+        if not python_versions:
+            msg = "python_versions must contain at least one version string"
+            raise ValueError(msg)
 
         workflow = _build_workflow(
             coverage_threshold=coverage_threshold,

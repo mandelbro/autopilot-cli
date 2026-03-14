@@ -104,6 +104,17 @@ class TestGenerateWorkflow:
             )
 
 
+class TestEdgeCases:
+    def setup_method(self) -> None:
+        self.gen = CIPipelineGenerator()
+
+    def test_empty_python_versions_raises(self) -> None:
+        import pytest
+
+        with pytest.raises(ValueError, match="python_versions"):
+            self.gen.generate_workflow(python_versions=[])
+
+
 class TestWriteWorkflow:
     def setup_method(self) -> None:
         self.gen = CIPipelineGenerator()
