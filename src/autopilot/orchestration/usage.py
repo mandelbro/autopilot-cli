@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from autopilot.core.config import AutopilotConfig, UsageLimitsConfig
@@ -151,6 +151,95 @@ class UsageTracker:
             conn.commit()
         finally:
             conn.close()
+
+    def allocate_cycles(
+        self,
+        projects: list[str],
+        total_budget: int,
+        priority_weights: dict[str, float] | None = None,
+    ) -> dict[str, int]:
+        """Allocate cycle budget across projects proportional to priority weights.
+
+        Higher weight = more cycles. Default weight is 1.0.
+        Returns dict mapping project name to allocated cycles.
+        """
+        weights = priority_weights or {}
+        project_weights = {p: weights.get(p, 1.0) for p in projects}
+        total_weight = sum(project_weights.values())
+
+        if total_weight <= 0 or total_budget <= 0:
+            return {p: 0 for p in projects}
+
+        allocation: dict[str, int] = {}
+        allocated = 0
+        sorted_projects = sorted(projects, key=lambda p: project_weights[p], reverse=True)
+
+        for i, project in enumerate(sorted_projects):
+            if i == len(sorted_projects) - 1:
+                allocation[project] = total_budget - allocated
+            else:
+                share = int(total_budget * project_weights[project] / total_weight)
+                allocation[project] = share
+                allocated += share
+
+        return allocation
+
+    def get_per_project_usage(self) -> dict[str, dict[str, int]]:
+        """Get usage breakdown per project.
+
+        Returns dict mapping project_id to {daily_cycles, weekly_cycles, agents_today}.
+        """
+        now = datetime.now(UTC)
+        day_start = _start_of_day(now)
+        week_start = _start_of_week(now)
+
+        conn = self._db.get_connection()
+        try:
+            project_rows = conn.execute("SELECT DISTINCT project_id FROM usage").fetchall()
+
+            result: dict[str, dict[str, int]] = {}
+            for row in project_rows:
+                project_id = row[0]
+                daily = self._count(project_id, "cycle", day_start)
+                weekly = self._count(project_id, "cycle", week_start)
+                agents = self._count(project_id, "agent_invocation", day_start)
+                result[project_id] = {
+                    "daily_cycles": daily,
+                    "weekly_cycles": weekly,
+                    "agents_today": agents,
+                }
+            return result
+        finally:
+            conn.close()
+
+    def usage_report(self, projects: list[str] | None = None) -> list[dict[str, Any]]:
+        """Generate usage report with per-project breakdown.
+
+        Returns list of dicts with project, usage, limits, and allocation info.
+        """
+        per_project = self.get_per_project_usage()
+        report_projects = projects or list(per_project.keys())
+
+        report: list[dict[str, Any]] = []
+        for project in report_projects:
+            limits = self._resolve_limits(project)
+            usage = per_project.get(
+                project,
+                {"daily_cycles": 0, "weekly_cycles": 0, "agents_today": 0},
+            )
+            report.append(
+                {
+                    "project": project,
+                    "daily_cycles": usage["daily_cycles"],
+                    "daily_limit": limits.daily_cycle_limit,
+                    "daily_remaining": max(0, limits.daily_cycle_limit - usage["daily_cycles"]),
+                    "weekly_cycles": usage["weekly_cycles"],
+                    "weekly_limit": limits.weekly_cycle_limit,
+                    "weekly_remaining": max(0, limits.weekly_cycle_limit - usage["weekly_cycles"]),
+                    "agents_today": usage["agents_today"],
+                }
+            )
+        return report
 
     def _resolve_limits(self, project: str) -> UsageLimitsConfig:
         return self._per_project_limits.get(project, self._global_limits)
