@@ -400,9 +400,7 @@ def test_ux_{section_slug}_{req_slug}() -> None:
 class UXTestGenerator:
     """Generates UX compliance tests (Category D)."""
 
-    def generate_ux_tests(
-        self, context: TaskContext, ux_index: SpecIndex
-    ) -> GeneratedTestFile:
+    def generate_ux_tests(self, context: TaskContext, ux_index: SpecIndex) -> GeneratedTestFile:
         """Generate UX compliance tests from a UX design spec index.
 
         Generates tests for dashboard constraints, prompt format,
