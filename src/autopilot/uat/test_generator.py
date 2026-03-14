@@ -291,7 +291,7 @@ import pytest
 '''
 
 _COMPLIANCE_TEMPLATE = '''\
-def test_rfc_{section_slug}_{req_slug}() -> None:
+def test_rfc_{name_slug}() -> None:
     """Compliance: {spec_id} — {requirement}"""
     # Spec: {spec_id} ({section})
     # Requirement: {requirement}
@@ -329,8 +329,7 @@ class ComplianceTestGenerator:
             test_names.append(name)
             body_parts.append(
                 _COMPLIANCE_TEMPLATE.format(
-                    section_slug=section_slug,
-                    req_slug=req_slug,
+                    name_slug=combined,
                     spec_id=_escape_docstring(entry.spec_id),
                     section=_escape_docstring(entry.section),
                     requirement=_escape_docstring(entry.requirement_text[:200]),
@@ -367,7 +366,7 @@ import pytest
 '''
 
 _UX_TEMPLATE = '''\
-def test_ux_{section_slug}_{req_slug}() -> None:
+def test_ux_{name_slug}() -> None:
     """UX Compliance: {spec_id} — {requirement}"""
     # Spec: {spec_id} ({section})
     # Requirement: {requirement}
@@ -403,8 +402,7 @@ class UXTestGenerator:
             test_names.append(name)
             body_parts.append(
                 _UX_TEMPLATE.format(
-                    section_slug=section_slug,
-                    req_slug=req_slug,
+                    name_slug=combined,
                     spec_id=_escape_docstring(entry.spec_id),
                     section=_escape_docstring(entry.section),
                     requirement=_escape_docstring(entry.requirement_text[:200]),
