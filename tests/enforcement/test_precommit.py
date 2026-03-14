@@ -121,9 +121,7 @@ class TestApply:
         result = setup.apply(tmp_path, "python")
         assert result.layer == "precommit"
 
-    def test_lefthook_yml_contains_parallel(
-        self, setup: PrecommitSetup, tmp_path: Path
-    ) -> None:
+    def test_lefthook_yml_contains_parallel(self, setup: PrecommitSetup, tmp_path: Path) -> None:
         setup.apply(tmp_path, "python")
         content = (tmp_path / "lefthook.yml").read_text()
         assert "parallel: true" in content

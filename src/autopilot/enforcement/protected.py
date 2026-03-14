@@ -137,9 +137,7 @@ class ProtectedRegionManager:
 
         return violations
 
-    def protect(
-        self, file_path: Path, start_line: int, line_count: int
-    ) -> ProtectedRegion:
+    def protect(self, file_path: Path, start_line: int, line_count: int) -> ProtectedRegion:
         """Add a ``#@protected`` marker before *start_line* (1-indexed).
 
         Reads *line_count* lines starting at *start_line*, computes their
@@ -168,9 +166,7 @@ class ProtectedRegionManager:
         _log.info("protected region created", extra={"region_id": region.region_id})
         return region
 
-    def update_hash(
-        self, file_path: Path, region_id: str
-    ) -> ProtectedRegion | None:
+    def update_hash(self, file_path: Path, region_id: str) -> ProtectedRegion | None:
         """Recompute and update the hash for *region_id*.
 
         Returns the updated :class:`ProtectedRegion`, or ``None`` if the

@@ -93,9 +93,7 @@ class TestGenerateWorkflow:
         parsed = yaml.safe_load(self.gen.generate_workflow())
         for job_name, job in parsed["jobs"].items():
             uses = [s.get("uses", "") for s in job["steps"]]
-            assert any("actions/checkout@v4" in u for u in uses), (
-                f"{job_name} missing checkout"
-            )
+            assert any("actions/checkout@v4" in u for u in uses), f"{job_name} missing checkout"
 
     def test_jobs_use_setup_python_v5(self) -> None:
         parsed = yaml.safe_load(self.gen.generate_workflow())

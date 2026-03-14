@@ -134,9 +134,7 @@ class TestProgressiveTrust:
             message="test message",
             is_security=False,
         )
-        result = self.gen.apply_progressive_trust(
-            rule, consecutive_triggers=5, threshold=5
-        )
+        result = self.gen.apply_progressive_trust(rule, consecutive_triggers=5, threshold=5)
         assert result.action == "warn"
 
     def test_warn_action_stays_warn(self) -> None:
