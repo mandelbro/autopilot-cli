@@ -392,7 +392,7 @@
 
 - **Title**: Discovery-to-task conversion pipeline (end-to-end)
 - **File**: src/autopilot/core/discovery.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a technical architect, I want automated conversion from discovery documents to structured tasks, so that the entire planning pipeline flows seamlessly from analysis to execution.
@@ -439,7 +439,7 @@
 
 - **Title**: Shelly estimation agent integration
 - **File**: src/autopilot/core/estimation.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want AI-assisted task estimation, so that sprint points are consistently assessed based on complexity analysis rather than gut feeling.
