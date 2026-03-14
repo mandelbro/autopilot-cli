@@ -9,12 +9,18 @@ import pytest
 if TYPE_CHECKING:
     from pathlib import Path
 
+from autopilot.uat.spec_index import SpecEntry, SpecIndex
 from autopilot.uat.task_context import TaskContext
 from autopilot.uat.test_generator import (
+    BehavioralTestGenerator,
+    ComplianceTestGenerator,
     GeneratedTestFile,
     TestGenerator,
+    UXTestGenerator,
+    _parse_user_story,
     _sanitize_id,
     _slugify,
+    _unique_slug,
 )
 
 # ---------------------------------------------------------------------------
@@ -65,6 +71,25 @@ class TestSanitizeId:
 
     def test_dotted_id(self) -> None:
         assert _sanitize_id("1.2.3") == "1_2_3"
+
+
+class TestUniqueSlug:
+    def test_unique_when_not_seen(self) -> None:
+        seen: set[str] = set()
+        result = _unique_slug("foo", seen)
+        assert result == "foo"
+        assert "foo" in seen
+
+    def test_appends_counter_on_collision(self) -> None:
+        seen: set[str] = {"foo"}
+        result = _unique_slug("foo", seen)
+        assert result == "foo_2"
+        assert "foo_2" in seen
+
+    def test_increments_counter(self) -> None:
+        seen: set[str] = {"foo", "foo_2"}
+        result = _unique_slug("foo", seen)
+        assert result == "foo_3"
 
 
 # ---------------------------------------------------------------------------
@@ -161,3 +186,260 @@ class TestTestGenerator:
         assert path.exists()
         content = path.read_text(encoding="utf-8")
         assert "test_task_046" in content
+
+
+# ---------------------------------------------------------------------------
+# User story parser tests (Task 071)
+# ---------------------------------------------------------------------------
+
+
+class TestParseUserStory:
+    def test_parses_standard_story(self) -> None:
+        story = "As a developer, I want to run tests, so that I verify correctness."
+        parts = _parse_user_story(story)
+        assert parts["role"] == "developer"
+        assert "run tests" in parts["action"]
+        assert "verify correctness" in parts["outcome"]
+
+    def test_parses_story_with_an(self) -> None:
+        story = "As an admin, I want to manage users, so that access is controlled."
+        parts = _parse_user_story(story)
+        assert parts["role"] == "admin"
+
+    def test_fallback_for_non_standard_story(self) -> None:
+        story = "Just some text that isn't a user story"
+        parts = _parse_user_story(story)
+        assert parts["role"] == "user"
+        assert parts["action"] == story.strip()
+
+
+# ---------------------------------------------------------------------------
+# BehavioralTestGenerator tests (Task 071)
+# ---------------------------------------------------------------------------
+
+
+class TestBehavioralTestGenerator:
+    @pytest.fixture()
+    def generator(self) -> BehavioralTestGenerator:
+        return BehavioralTestGenerator()
+
+    @pytest.fixture()
+    def story_context(self) -> TaskContext:
+        return TaskContext(
+            task_id="071",
+            title="Behavioral test generator",
+            sprint_points=3,
+            user_story=(
+                "As a UAT agent, I want to generate behavioral tests "
+                "from user stories, so that the system verifies end-to-end workflows."
+            ),
+            acceptance_criteria=[
+                "User stories are parsed into testable components",
+                "Generated tests follow Given-When-Then structure",
+                "Test names are descriptive and unique",
+            ],
+        )
+
+    def test_generates_from_user_story(
+        self, generator: BehavioralTestGenerator, story_context: TaskContext
+    ) -> None:
+        result = generator.generate_behavioral_tests(story_context)
+        assert result.test_count >= 1
+        assert all(name.startswith("test_user_story_071_") for name in result.test_names)
+
+    def test_file_path_format(
+        self, generator: BehavioralTestGenerator, story_context: TaskContext
+    ) -> None:
+        result = generator.generate_behavioral_tests(story_context)
+        assert result.file_path == "tests/uat/test_task_071_behavioral.py"
+
+    def test_source_is_valid_python(
+        self, generator: BehavioralTestGenerator, story_context: TaskContext
+    ) -> None:
+        result = generator.generate_behavioral_tests(story_context)
+        compile(result.source_code, "<test>", "exec")
+
+    def test_contains_given_when_then(
+        self, generator: BehavioralTestGenerator, story_context: TaskContext
+    ) -> None:
+        result = generator.generate_behavioral_tests(story_context)
+        assert "# Given:" in result.source_code
+        assert "# When:" in result.source_code
+        assert "# Then:" in result.source_code
+
+    def test_empty_story_generates_no_tests(self, generator: BehavioralTestGenerator) -> None:
+        ctx = TaskContext(task_id="999", title="No story", user_story="")
+        result = generator.generate_behavioral_tests(ctx)
+        assert result.test_count == 0
+
+    def test_unique_test_names(
+        self, generator: BehavioralTestGenerator, story_context: TaskContext
+    ) -> None:
+        result = generator.generate_behavioral_tests(story_context)
+        assert len(set(result.test_names)) == len(result.test_names)
+
+
+# ---------------------------------------------------------------------------
+# ComplianceTestGenerator tests (Task 072)
+# ---------------------------------------------------------------------------
+
+
+class TestComplianceTestGenerator:
+    @pytest.fixture()
+    def generator(self) -> ComplianceTestGenerator:
+        return ComplianceTestGenerator()
+
+    @pytest.fixture()
+    def spec_index(self) -> SpecIndex:
+        return SpecIndex(
+            entries=[
+                SpecEntry(
+                    spec_id="RFC-R001",
+                    document="RFC",
+                    section="Config > Fields",
+                    requirement_text="Config MUST include project_name field",
+                ),
+                SpecEntry(
+                    spec_id="RFC-R002",
+                    document="RFC",
+                    section="SQL > Tables",
+                    requirement_text="Sessions table MUST have id column",
+                ),
+                SpecEntry(
+                    spec_id="RFC-R003",
+                    document="RFC",
+                    section="CLI > Commands",
+                    requirement_text="CLI SHOULD register init command",
+                ),
+            ],
+            total_requirements=3,
+            testable_count=3,
+        )
+
+    @pytest.fixture()
+    def context(self) -> TaskContext:
+        return TaskContext(task_id="072", title="Compliance test generator", sprint_points=3)
+
+    def test_generates_from_spec_index(
+        self,
+        generator: ComplianceTestGenerator,
+        context: TaskContext,
+        spec_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_compliance_tests(context, spec_index)
+        assert result.test_count == 3
+        assert all(name.startswith("test_rfc_") for name in result.test_names)
+
+    def test_file_path_format(
+        self,
+        generator: ComplianceTestGenerator,
+        context: TaskContext,
+        spec_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_compliance_tests(context, spec_index)
+        assert result.file_path == "tests/uat/test_task_072_compliance.py"
+
+    def test_source_is_valid_python(
+        self,
+        generator: ComplianceTestGenerator,
+        context: TaskContext,
+        spec_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_compliance_tests(context, spec_index)
+        compile(result.source_code, "<test>", "exec")
+
+    def test_empty_index_generates_no_tests(
+        self, generator: ComplianceTestGenerator, context: TaskContext
+    ) -> None:
+        empty = SpecIndex(entries=[], total_requirements=0, testable_count=0)
+        result = generator.generate_compliance_tests(context, empty)
+        assert result.test_count == 0
+
+    def test_unique_test_names(
+        self,
+        generator: ComplianceTestGenerator,
+        context: TaskContext,
+        spec_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_compliance_tests(context, spec_index)
+        assert len(set(result.test_names)) == len(result.test_names)
+
+
+# ---------------------------------------------------------------------------
+# UXTestGenerator tests (Task 073)
+# ---------------------------------------------------------------------------
+
+
+class TestUXTestGenerator:
+    @pytest.fixture()
+    def generator(self) -> UXTestGenerator:
+        return UXTestGenerator()
+
+    @pytest.fixture()
+    def ux_index(self) -> SpecIndex:
+        return SpecIndex(
+            entries=[
+                SpecEntry(
+                    spec_id="ux-design-R001",
+                    document="ux-design",
+                    section="Dashboard > Layout",
+                    requirement_text="Dashboard MUST fit within 80x24 terminal",
+                ),
+                SpecEntry(
+                    spec_id="ux-design-R002",
+                    document="ux-design",
+                    section="Prompt > Format",
+                    requirement_text="Prompt MUST show project name and agent count",
+                ),
+            ],
+            total_requirements=2,
+            testable_count=2,
+        )
+
+    @pytest.fixture()
+    def context(self) -> TaskContext:
+        return TaskContext(task_id="073", title="UX compliance test generator", sprint_points=3)
+
+    def test_generates_from_ux_index(
+        self,
+        generator: UXTestGenerator,
+        context: TaskContext,
+        ux_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_ux_tests(context, ux_index)
+        assert result.test_count == 2
+        assert all(name.startswith("test_ux_") for name in result.test_names)
+
+    def test_file_path_format(
+        self,
+        generator: UXTestGenerator,
+        context: TaskContext,
+        ux_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_ux_tests(context, ux_index)
+        assert result.file_path == "tests/uat/test_task_073_ux.py"
+
+    def test_source_is_valid_python(
+        self,
+        generator: UXTestGenerator,
+        context: TaskContext,
+        ux_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_ux_tests(context, ux_index)
+        compile(result.source_code, "<test>", "exec")
+
+    def test_empty_index_generates_no_tests(
+        self, generator: UXTestGenerator, context: TaskContext
+    ) -> None:
+        empty = SpecIndex(entries=[], total_requirements=0, testable_count=0)
+        result = generator.generate_ux_tests(context, empty)
+        assert result.test_count == 0
+
+    def test_unique_test_names(
+        self,
+        generator: UXTestGenerator,
+        context: TaskContext,
+        ux_index: SpecIndex,
+    ) -> None:
+        result = generator.generate_ux_tests(context, ux_index)
+        assert len(set(result.test_names)) == len(result.test_names)
