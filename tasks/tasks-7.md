@@ -14,7 +14,7 @@
 
 - **Title**: Layer 2 -- Pre-commit hook setup
 - **File**: src/autopilot/enforcement/precommit.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want pre-commit hooks that block anti-patterns at commit time, so that enforcement catches issues before they enter the repository.
@@ -61,7 +61,7 @@
 
 - **Title**: Layer 3 -- CI/CD template generation
 - **File**: src/autopilot/enforcement/ci.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want CI pipeline templates with quality gates, so that nothing merges without passing enforcement checks as a backstop.
@@ -106,7 +106,7 @@
 
 - **Title**: Layer 4 -- Agent guardrails (PreToolUse/PostToolUse hooks)
 - **File**: src/autopilot/enforcement/guardrails.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want real-time guardrails during agent execution, so that dangerous operations like --no-verify or unauthorized dependencies are blocked before they happen.
@@ -154,7 +154,7 @@
 
 - **Title**: Layer 5 -- Protected code regions
 - **File**: src/autopilot/enforcement/protected.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want to mark critical code regions as protected, so that AI agents cannot silently modify auth logic, payment processing, or data migrations without explicit review.
@@ -199,7 +199,7 @@
 
 - **Title**: Quality gate prompt generation for hive-mind
 - **File**: src/autopilot/enforcement/quality_gates.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a scheduler, I want quality gates injected into hive-mind objectives, so that every worker runs linting, type checking, and tests before reporting completion.
@@ -242,7 +242,7 @@
 
 - **Title**: Enforcement metrics collection to SQLite
 - **File**: src/autopilot/enforcement/metrics.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want enforcement metrics tracked over time, so that I can see whether code quality is improving sprint over sprint.
@@ -287,7 +287,7 @@
 
 - **Title**: Enforce CLI commands (setup, check, report)
 - **File**: src/autopilot/cli/enforce.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a technical architect, I want CLI commands for enforcement setup, checking, and reporting, so that I can manage anti-pattern enforcement from the terminal.
