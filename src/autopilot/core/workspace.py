@@ -10,19 +10,21 @@ import fcntl
 import json
 import logging
 import shutil
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from autopilot.core.models import WorkspaceInfo, WorkspaceStatus
+from autopilot.core.models import SessionStatus, WorkspaceInfo, WorkspaceStatus
 from autopilot.utils.git import clone_repository
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from autopilot.core.config import WorkspaceConfig
     from autopilot.core.project import ProjectRegistry
+
+# Type alias for session status lookup — avoids importing SessionManager
+SessionStatusLookup = Callable[[str], SessionStatus | None]
 
 _log = logging.getLogger(__name__)
 
@@ -163,6 +165,144 @@ class WorkspaceManager:
         if entry is None:
             return None
         return self._dict_to_info(entry)
+
+    def detect_stale(self, get_session_status: SessionStatusLookup) -> list[WorkspaceInfo]:
+        """Detect workspaces whose sessions have ended, failed, or been deleted.
+
+        Also scans the filesystem for orphaned directories not tracked in the manifest.
+
+        Args:
+            get_session_status: Callback that returns session status for a session ID,
+                or None if the session no longer exists.
+        """
+        manifest = self._read_manifest()
+        stale: list[WorkspaceInfo] = []
+
+        for entry in manifest.values():
+            info = self._dict_to_info(entry)
+            status = get_session_status(info.session_id)
+            if status is None or status in (SessionStatus.COMPLETED, SessionStatus.FAILED):
+                stale.append(info)
+
+        # Scan for orphaned directories not in the manifest
+        if self._base_dir.is_dir():
+            tracked_dirs = {Path(e["workspace_dir"]).resolve() for e in manifest.values()}
+            for child in self._base_dir.iterdir():
+                if not child.is_dir():
+                    continue
+                # Skip manifest/lock files and non-workspace directories
+                if child.resolve() in tracked_dirs:
+                    continue
+                if child.name.startswith("."):
+                    continue
+                # Check if it looks like a workspace (has .git)
+                if (child / ".git").exists():
+                    orphan = WorkspaceInfo(
+                        id=f"orphan-{child.name}",
+                        project_name="unknown",
+                        session_id="unknown",
+                        workspace_dir=child,
+                        repository_url="",
+                        status=WorkspaceStatus.FAILED,
+                    )
+                    stale.append(orphan)
+
+        return stale
+
+    def disk_usage(self, workspace_id: str | None = None) -> dict[str, Any]:
+        """Report disk usage for workspaces.
+
+        Args:
+            workspace_id: If provided, report for a single workspace.
+                If None, report total and per-workspace breakdown.
+
+        Returns:
+            Dict with ``total_bytes`` and ``workspaces`` keys.
+        """
+        if workspace_id is not None:
+            manifest = self._read_manifest()
+            entry = manifest.get(workspace_id)
+            if entry is None:
+                return {"total_bytes": 0, "workspaces": {workspace_id: 0}}
+            ws_dir = Path(entry["workspace_dir"])
+            size = self._dir_size(ws_dir)
+            return {"total_bytes": size, "workspaces": {workspace_id: size}}
+
+        manifest = self._read_manifest()
+        per_workspace: dict[str, int] = {}
+        total = 0
+        for wid, entry in manifest.items():
+            ws_dir = Path(entry["workspace_dir"])
+            size = self._dir_size(ws_dir)
+            per_workspace[wid] = size
+            total += size
+        return {"total_bytes": total, "workspaces": per_workspace}
+
+    def cleanup_stale(self, get_session_status: SessionStatusLookup) -> list[str]:
+        """Detect and clean up all stale workspaces.
+
+        Removes stale workspace directories and prunes manifest entries
+        whose directories no longer exist.
+
+        Returns:
+            List of cleaned workspace IDs.
+        """
+        stale = self.detect_stale(get_session_status)
+        cleaned: list[str] = []
+
+        for info in stale:
+            wid = info.id
+            if wid.startswith("orphan-"):
+                # Orphaned directory not in manifest — just remove the directory
+                if info.workspace_dir.exists():
+                    shutil.rmtree(info.workspace_dir, ignore_errors=True)
+                    _log.info("Removed orphaned workspace directory: %s", info.workspace_dir)
+                cleaned.append(wid)
+            else:
+                try:
+                    self.cleanup(wid)
+                    _log.info("Cleaned stale workspace: %s", wid)
+                    cleaned.append(wid)
+                except (WorkspaceError, OSError):
+                    _log.warning("Failed to clean workspace %s, pruning manifest", wid)
+                    cleaned.append(wid)
+
+        # Prune any remaining stale manifest entries
+        pruned = self._prune_stale_manifest_entries()
+        for pid in pruned:
+            if pid not in cleaned:
+                cleaned.append(pid)
+
+        return cleaned
+
+    def _prune_stale_manifest_entries(self) -> list[str]:
+        """Remove manifest entries whose directories no longer exist.
+
+        Returns:
+            List of pruned workspace IDs.
+        """
+        pruned: list[str] = []
+        with self._locked():
+            manifest = self._read_manifest()
+            to_remove: list[str] = []
+            for wid, entry in manifest.items():
+                ws_dir = Path(entry["workspace_dir"])
+                if not ws_dir.exists():
+                    to_remove.append(wid)
+            for wid in to_remove:
+                del manifest[wid]
+                pruned.append(wid)
+                _log.info("Pruned stale manifest entry: %s", wid)
+            if pruned:
+                self._write_manifest(manifest)
+        return pruned
+
+    @staticmethod
+    def _dir_size(path: Path) -> int:
+        """Calculate total size of all files in a directory tree."""
+        if not path.is_dir():
+            return 0
+        return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
 
     # -- Private helpers --
 

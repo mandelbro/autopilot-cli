@@ -1,17 +1,27 @@
-"""Tests for autopilot.core.workspace (Task 097)."""
+"""Tests for autopilot.core.workspace (Tasks 097, 103)."""
 
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
 
 from autopilot.core.config import WorkspaceConfig
-from autopilot.core.models import WorkspaceStatus
+from autopilot.core.models import SessionStatus, WorkspaceStatus
 from autopilot.core.project import ProjectRegistry
-from autopilot.core.workspace import WorkspaceError, WorkspaceManager
+from autopilot.core.workspace import SessionStatusLookup, WorkspaceError, WorkspaceManager
+
+
+def _status_lookup(status: SessionStatus | None) -> SessionStatusLookup:
+    """Create a session status lookup callback that always returns the given status."""
+
+    def _lookup(_sid: str) -> SessionStatus | None:
+        return status
+
+    return _lookup
 
 
 def _make_git_repo(path: Path) -> Path:
@@ -315,3 +325,165 @@ class TestWorkspaceManifest:
         mgr2 = WorkspaceManager(config, registry)
         workspaces = mgr2.list_workspaces()
         assert len(workspaces) == 1
+
+
+class TestDetectStale:
+    def test_detects_completed_session(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        mgr.create("test-project", "session-12345678")
+
+        stale = mgr.detect_stale(_status_lookup(SessionStatus.COMPLETED))
+        assert len(stale) == 1
+        assert stale[0].session_id == "session-12345678"
+
+    def test_detects_failed_session(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        mgr.create("test-project", "session-12345678")
+
+        stale = mgr.detect_stale(_status_lookup(SessionStatus.FAILED))
+        assert len(stale) == 1
+        assert stale[0].session_id == "session-12345678"
+
+    def test_detects_deleted_session(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        mgr.create("test-project", "session-12345678")
+
+        stale = mgr.detect_stale(_status_lookup(None))
+        assert len(stale) == 1
+        assert stale[0].session_id == "session-12345678"
+
+    def test_skips_running_session(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        mgr.create("test-project", "session-12345678")
+
+        stale = mgr.detect_stale(_status_lookup(SessionStatus.RUNNING))
+        # Only orphans or truly stale — the running session should not appear
+        manifest_stale = [s for s in stale if not s.id.startswith("orphan-")]
+        assert manifest_stale == []
+
+    def test_detects_orphaned_filesystem_directory(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        # Create a workspace so the base_dir exists
+        mgr.create("test-project", "session-12345678")
+
+        # Manually create an orphaned workspace directory (not tracked in manifest)
+        orphan_dir = base_dir / "orphan-workspace"
+        orphan_dir.mkdir(parents=True)
+        (orphan_dir / ".git").mkdir()
+
+        stale = mgr.detect_stale(_status_lookup(SessionStatus.RUNNING))
+        orphans = [s for s in stale if s.id.startswith("orphan-")]
+        assert len(orphans) == 1
+        assert orphans[0].workspace_dir == orphan_dir
+
+    def test_empty_manifest_returns_empty(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+
+        stale = mgr.detect_stale(_status_lookup(None))
+        assert stale == []
+
+
+class TestDiskUsage:
+    def test_reports_single_workspace(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        info = mgr.create("test-project", "session-12345678")
+
+        usage = mgr.disk_usage(workspace_id=info.id)
+        assert usage["total_bytes"] > 0
+        assert info.id in usage["workspaces"]
+        assert usage["workspaces"][info.id] > 0
+
+    def test_reports_all_workspaces(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        info1 = mgr.create("test-project", "aaaaaaaa-0001")
+        info2 = mgr.create("test-project", "bbbbbbbb-0002")
+
+        usage = mgr.disk_usage()
+        assert usage["total_bytes"] > 0
+        assert info1.id in usage["workspaces"]
+        assert info2.id in usage["workspaces"]
+        # Total should be sum of individual workspaces
+        expected_total = sum(usage["workspaces"].values())
+        assert usage["total_bytes"] == expected_total
+
+    def test_nonexistent_workspace_returns_zero(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+
+        usage = mgr.disk_usage(workspace_id="nonexistent-id")
+        assert usage["total_bytes"] == 0
+        assert usage["workspaces"]["nonexistent-id"] == 0
+
+
+class TestCleanupStale:
+    def test_cleans_stale_workspaces(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        info = mgr.create("test-project", "session-12345678")
+        assert info.workspace_dir.exists()
+
+        mgr.cleanup_stale(_status_lookup(SessionStatus.COMPLETED))
+
+        assert not info.workspace_dir.exists()
+        assert mgr.get_workspace(info.id) is None
+
+    def test_returns_cleaned_ids(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        info1 = mgr.create("test-project", "aaaaaaaa-0001")
+        info2 = mgr.create("test-project", "bbbbbbbb-0002")
+
+        cleaned = mgr.cleanup_stale(_status_lookup(SessionStatus.FAILED))
+
+        assert info1.id in cleaned
+        assert info2.id in cleaned
+
+    def test_prunes_stale_manifest_entries(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        info = mgr.create("test-project", "session-12345678")
+
+        # Manually delete the workspace directory (simulating a crash)
+        shutil.rmtree(info.workspace_dir)
+        assert not info.workspace_dir.exists()
+
+        # The manifest still has the entry
+        assert mgr.get_workspace(info.id) is not None
+
+        cleaned = mgr.cleanup_stale(_status_lookup(SessionStatus.COMPLETED))
+
+        assert info.id in cleaned
+        # Manifest entry should now be pruned
+        assert mgr.get_workspace(info.id) is None
