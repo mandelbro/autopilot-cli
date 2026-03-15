@@ -145,7 +145,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: WorkspaceManager core class with create, cleanup, and list
 - **File**: src/autopilot/core/workspace.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want autopilot to automatically create isolated workspace clones for each session, so that agent work never conflicts with my local checkout.
