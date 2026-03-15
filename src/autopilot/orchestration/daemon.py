@@ -93,7 +93,11 @@ class Daemon:
         # Forward workspace manager to scheduler if not already set
         if self._workspace_manager is not None and self._scheduler._workspace_manager is None:  # pyright: ignore[reportPrivateUsage]
             self._scheduler._workspace_manager = self._workspace_manager  # pyright: ignore[reportPrivateUsage]
-        elif self._config.workspace.enabled and self._workspace_manager is None:
+        elif (
+            self._config.workspace.enabled
+            and self._workspace_manager is None
+            and self._scheduler._workspace_manager is None  # pyright: ignore[reportPrivateUsage]
+        ):
             _log.warning("daemon_workspace_enabled_but_no_manager")
 
         self._state = DaemonState.RUNNING

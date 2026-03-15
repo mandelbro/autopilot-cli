@@ -238,8 +238,9 @@ class TestInitializeProjectWithRepositoryUrl:
             assert data[0]["repository_url"] == ""
 
     def test_next_steps_include_workspace_hint(self, tmp_path: Path) -> None:
-        result = initialize_project("hint-test", root_path=tmp_path)
-        assert any("workspace" in step.lower() for step in result.next_steps)
+        with patch("autopilot.core.project.get_global_dir", return_value=tmp_path / "global"):
+            result = initialize_project("hint-test", root_path=tmp_path / "hint-proj")
+            assert any("workspace" in step.lower() for step in result.next_steps)
 
 
 class TestProjectInitResult:
