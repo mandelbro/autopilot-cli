@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -26,6 +27,8 @@ from autopilot.core.models import (
     UsageState,
     Violation,
     ViolationSeverity,
+    WorkspaceInfo,
+    WorkspaceStatus,
 )
 
 
@@ -309,3 +312,70 @@ class TestEnforcementReport:
     def test_default_collected_at_is_utc(self) -> None:
         report = EnforcementReport(project_id="p-001")
         assert report.collected_at.tzinfo is not None
+
+
+class TestWorkspaceStatus:
+    def test_all_values(self) -> None:
+        assert WorkspaceStatus.CREATING.value == "creating"
+        assert WorkspaceStatus.READY.value == "ready"
+        assert WorkspaceStatus.ACTIVE.value == "active"
+        assert WorkspaceStatus.CLEANING.value == "cleaning"
+        assert WorkspaceStatus.CLEANED.value == "cleaned"
+        assert WorkspaceStatus.FAILED.value == "failed"
+        assert len(WorkspaceStatus) == 6
+
+
+class TestWorkspaceInfo:
+    def test_creation(self) -> None:
+        info = WorkspaceInfo(
+            id="ws-001",
+            project_name="myproject",
+            session_id="s-001",
+            workspace_dir=Path("/tmp/ws"),
+            repository_url="https://github.com/user/repo.git",
+            status=WorkspaceStatus.READY,
+            branch="feat/workspace",
+            clone_depth=1,
+        )
+        assert info.id == "ws-001"
+        assert info.project_name == "myproject"
+        assert info.session_id == "s-001"
+        assert info.workspace_dir == Path("/tmp/ws")
+        assert info.repository_url == "https://github.com/user/repo.git"
+        assert info.status == WorkspaceStatus.READY
+        assert info.branch == "feat/workspace"
+        assert info.clone_depth == 1
+
+    def test_status_is_mutable(self) -> None:
+        info = WorkspaceInfo(
+            id="ws-002",
+            project_name="test",
+            session_id="s-002",
+            workspace_dir=Path("/tmp/ws2"),
+            repository_url="https://github.com/user/repo.git",
+            status=WorkspaceStatus.CREATING,
+        )
+        info.status = WorkspaceStatus.READY
+        assert info.status == WorkspaceStatus.READY
+
+    def test_default_created_at_is_utc(self) -> None:
+        info = WorkspaceInfo(
+            id="ws-003",
+            project_name="test",
+            session_id="s-003",
+            workspace_dir=Path("/tmp/ws3"),
+            repository_url="https://github.com/user/repo.git",
+            status=WorkspaceStatus.CREATING,
+        )
+        assert info.created_at.tzinfo is not None
+
+    def test_cleaned_at_defaults_to_none(self) -> None:
+        info = WorkspaceInfo(
+            id="ws-004",
+            project_name="test",
+            session_id="s-004",
+            workspace_dir=Path("/tmp/ws4"),
+            repository_url="https://github.com/user/repo.git",
+            status=WorkspaceStatus.ACTIVE,
+        )
+        assert info.cleaned_at is None

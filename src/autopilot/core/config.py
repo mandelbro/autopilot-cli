@@ -160,6 +160,17 @@ class DeploymentMonitoringConfig(BaseModel):
     services: dict[str, MonitoredServiceConfig] = Field(default_factory=dict)
 
 
+class WorkspaceConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    enabled: bool = False
+    base_dir: str = "~/.autopilot/workspaces"
+    cleanup_on_success: bool = True
+    cleanup_on_failure: bool = False
+    clone_depth: int = Field(default=0, ge=0)
+    max_workspaces: int = Field(default=5, gt=0)
+
+
 class AutopilotConfig(BaseModel):
     """Root configuration model."""
 
@@ -178,6 +189,7 @@ class AutopilotConfig(BaseModel):
     deployment_monitoring: DeploymentMonitoringConfig = Field(
         default_factory=DeploymentMonitoringConfig
     )
+    workspace: WorkspaceConfig = Field(default_factory=WorkspaceConfig)
 
     @classmethod
     def from_yaml(cls, path: Path) -> Self:

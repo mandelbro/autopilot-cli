@@ -7,6 +7,8 @@ validation per RFC Section 3.8.
 from __future__ import annotations
 
 import subprocess
+import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -112,3 +114,95 @@ def validate_git_state(
         issues.append(str(exc))
 
     return issues
+
+
+@dataclass(frozen=True)
+class CloneResult:
+    """Result from a git clone operation."""
+
+    success: bool
+    workspace_dir: Path
+    error: str = ""
+    duration_seconds: float = 0.0
+
+
+def clone_repository(
+    repository_url: str,
+    target_dir: Path,
+    *,
+    branch: str = "",
+    depth: int = 0,
+    timeout_seconds: int = 120,
+) -> CloneResult:
+    """Clone a git repository into target_dir.
+
+    Args:
+        repository_url: The git URL or local path to clone from.
+        target_dir: Where to clone into (must not exist).
+        branch: Optional branch to clone (--branch flag).
+        depth: Clone depth (0 = full clone, >0 = shallow).
+        timeout_seconds: Maximum time for clone operation.
+    """
+    if not repository_url:
+        return CloneResult(
+            success=False, workspace_dir=target_dir, error="Repository URL must not be empty"
+        )
+
+    if target_dir.exists():
+        return CloneResult(
+            success=False,
+            workspace_dir=target_dir,
+            error=f"Target directory already exists: {target_dir}",
+        )
+
+    if depth < 0:
+        return CloneResult(
+            success=False, workspace_dir=target_dir, error="Clone depth must be >= 0"
+        )
+
+    if timeout_seconds <= 0:
+        return CloneResult(success=False, workspace_dir=target_dir, error="Timeout must be > 0")
+
+    cmd: list[str] = ["git", "clone", repository_url, str(target_dir)]
+    if depth > 0:
+        cmd.extend(["--depth", str(depth)])
+    if branch:
+        cmd.extend(["--branch", branch, "--single-branch"])
+
+    start = time.monotonic()
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        elapsed = time.monotonic() - start
+        return CloneResult(
+            success=False,
+            workspace_dir=target_dir,
+            error=f"Clone timed out after {timeout_seconds}s",
+            duration_seconds=elapsed,
+        )
+    except FileNotFoundError:
+        return CloneResult(
+            success=False,
+            workspace_dir=target_dir,
+            error="git is not installed or not found in PATH",
+        )
+
+    elapsed = time.monotonic() - start
+    if result.returncode != 0:
+        return CloneResult(
+            success=False,
+            workspace_dir=target_dir,
+            error=result.stderr.strip(),
+            duration_seconds=elapsed,
+        )
+
+    return CloneResult(
+        success=True,
+        workspace_dir=target_dir,
+        duration_seconds=elapsed,
+    )

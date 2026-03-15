@@ -16,7 +16,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: WorkspaceConfig Pydantic model and WorkspaceInfo dataclass
 - **File**: src/autopilot/core/config.py, src/autopilot/core/models.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a system operator, I want workspace isolation to be configurable via YAML, so that I can enable or disable isolated workspaces and control clone behavior without code changes.
@@ -95,7 +95,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: ProjectRegistry repository_url extension
 - **File**: src/autopilot/core/project.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want autopilot to know each project's repository URL, so that workspace isolation can clone fresh copies without manual intervention.
@@ -235,7 +235,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: Git clone subprocess helper with configuration
 - **File**: src/autopilot/utils/git.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want git clone operations to support shallow clones and branch targeting, so that workspace creation is fast for large repositories and agents work on the correct branch.

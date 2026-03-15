@@ -58,6 +58,7 @@ class RegisteredProject:
     registered_at: str = field(default_factory=lambda: _utc_now().isoformat())
     last_active: str = ""
     archived: bool = False
+    repository_url: str = ""
 
 
 @dataclass
@@ -96,8 +97,11 @@ class ProjectRegistry:
         raw = self._read_raw()
         return [self._dict_to_project(p) for p in raw]
 
-    def register(self, name: str, path: str, project_type: str) -> RegisteredProject:
+    def register(
+        self, name: str, path: str, project_type: str, *, repository_url: str = ""
+    ) -> RegisteredProject:
         """Register a new project. Raises ValueError on duplicate name."""
+        self._validate_repository_url(repository_url)
         with self._locked():
             raw = self._read_raw()
             for p in raw:
@@ -105,7 +109,9 @@ class ProjectRegistry:
                     msg = f"Project '{name}' is already registered"
                     raise ValueError(msg)
 
-            project = RegisteredProject(name=name, path=path, type=project_type)
+            project = RegisteredProject(
+                name=name, path=path, type=project_type, repository_url=repository_url
+            )
             raw.append(self._project_to_dict(project))
             self._write_raw(raw)
         return project
@@ -159,6 +165,32 @@ class ProjectRegistry:
             msg = f"Project '{name}' not found in registry"
             raise KeyError(msg)
 
+    def update_repository_url(self, name: str, url: str) -> None:
+        """Update the repository URL for a registered project."""
+        self._validate_repository_url(url)
+        with self._locked():
+            raw = self._read_raw()
+            for p in raw:
+                if p.get("name") == name:
+                    p["repository_url"] = url
+                    self._write_raw(raw)
+                    return
+            msg = f"Project '{name}' not found in registry"
+            raise KeyError(msg)
+
+    @staticmethod
+    def _validate_repository_url(url: str) -> None:
+        """Validate that a URL is a plausible git URL."""
+        if not url:
+            return
+        if url.startswith(("https://", "git@", "ssh://")) or url.startswith("/"):
+            return
+        msg = (
+            f"Not a plausible git URL: {url!r}. "
+            "Must start with https://, git@, ssh://, or be a local path"
+        )
+        raise ValueError(msg)
+
     def validate_all(self) -> list[RegistryIssue]:
         """Check all registered projects for issues."""
         issues: list[RegistryIssue] = []
@@ -203,6 +235,7 @@ class ProjectRegistry:
             registered_at=d.get("registered_at", ""),
             last_active=d.get("last_active", ""),
             archived=bool(d.get("archived", False)),
+            repository_url=d.get("repository_url", ""),
         )
 
     @staticmethod
@@ -214,6 +247,7 @@ class ProjectRegistry:
             "registered_at": p.registered_at,
             "last_active": p.last_active,
             "archived": p.archived,
+            "repository_url": p.repository_url,
         }
 
 
