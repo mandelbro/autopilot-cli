@@ -8,8 +8,10 @@ from pathlib import Path  # noqa: TC003
 import pytest
 
 from autopilot.utils.git import (
+    CloneResult,
     GitError,
     checkout,
+    clone_repository,
     create_branch,
     current_branch,
     fetch_origin,
@@ -109,3 +111,85 @@ class TestValidateGitState:
         (repo / "new.txt").write_text("dirty")
         issues = validate_git_state("nonexistent", cwd=repo)
         assert len(issues) == 2
+
+
+class TestCloneResult:
+    def test_creation(self) -> None:
+        r = CloneResult(success=True, workspace_dir=Path("/tmp/ws"))
+        assert r.success is True
+        assert r.workspace_dir == Path("/tmp/ws")
+        assert r.error == ""
+        assert r.duration_seconds == 0.0
+
+    def test_frozen(self) -> None:
+        r = CloneResult(success=True, workspace_dir=Path("/tmp"))
+        with pytest.raises(AttributeError):
+            r.success = False  # type: ignore[misc]
+
+
+class TestCloneRepository:
+    def test_successful_clone(self, tmp_path: Path) -> None:
+        source = _make_git_repo(tmp_path / "source")
+        target = tmp_path / "target"
+        result = clone_repository(str(source), target)
+        assert result.success is True
+        assert result.workspace_dir == target
+        assert result.error == ""
+        assert result.duration_seconds > 0
+        assert (target / "README.md").exists()
+
+    def test_shallow_clone(self, tmp_path: Path) -> None:
+        source = _make_git_repo(tmp_path / "source")
+        target = tmp_path / "target"
+        result = clone_repository(str(source), target, depth=1)
+        assert result.success is True
+        assert (target / "README.md").exists()
+
+    def test_branch_clone(self, tmp_path: Path) -> None:
+        source = _make_git_repo(tmp_path / "source")
+        subprocess.run(
+            ["git", "checkout", "-b", "feature"],
+            cwd=source,
+            capture_output=True,
+            check=True,
+        )
+        (source / "feature.txt").write_text("feature")
+        subprocess.run(["git", "add", "."], cwd=source, capture_output=True, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "feature commit"],
+            cwd=source,
+            capture_output=True,
+            check=True,
+        )
+
+        target = tmp_path / "target"
+        result = clone_repository(str(source), target, branch="feature")
+        assert result.success is True
+        assert (target / "feature.txt").exists()
+
+    def test_empty_url_returns_error(self, tmp_path: Path) -> None:
+        result = clone_repository("", tmp_path / "target")
+        assert result.success is False
+        assert "empty" in result.error.lower() or "url" in result.error.lower()
+
+    def test_target_exists_returns_error(self, tmp_path: Path) -> None:
+        existing = tmp_path / "existing"
+        existing.mkdir()
+        result = clone_repository("https://example.com/repo.git", existing)
+        assert result.success is False
+        assert "exist" in result.error.lower()
+
+    def test_invalid_url_returns_error(self, tmp_path: Path) -> None:
+        result = clone_repository("not-a-valid-repo-url", tmp_path / "target")
+        assert result.success is False
+        assert result.error != ""
+
+    def test_negative_depth_returns_error(self, tmp_path: Path) -> None:
+        result = clone_repository("https://example.com/repo.git", tmp_path / "target", depth=-1)
+        assert result.success is False
+
+    def test_zero_timeout_returns_error(self, tmp_path: Path) -> None:
+        result = clone_repository(
+            "https://example.com/repo.git", tmp_path / "target", timeout_seconds=0
+        )
+        assert result.success is False

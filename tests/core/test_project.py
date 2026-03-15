@@ -8,7 +8,12 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from autopilot.core.project import ProjectInitResult, initialize_project
+from autopilot.core.project import (
+    ProjectInitResult,
+    ProjectRegistry,
+    RegisteredProject,
+    initialize_project,
+)
 
 
 class TestInitializeProject:
@@ -118,6 +123,99 @@ class TestInitializeProject:
             names = [p["name"] for p in data]
             assert "proj-a" in names
             assert "proj-b" in names
+
+
+class TestRegisteredProject:
+    def test_default_repository_url(self) -> None:
+        p = RegisteredProject(name="test", path="/tmp/test", type="python")
+        assert p.repository_url == ""
+
+    def test_custom_repository_url(self) -> None:
+        p = RegisteredProject(
+            name="test",
+            path="/tmp/test",
+            type="python",
+            repository_url="https://github.com/test/test.git",
+        )
+        assert p.repository_url == "https://github.com/test/test.git"
+
+
+class TestProjectRegistryRepositoryUrl:
+    def test_register_with_repository_url(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        project = registry.register(
+            "test", "/tmp/test", "python", repository_url="https://github.com/t/t.git"
+        )
+        assert project.repository_url == "https://github.com/t/t.git"
+
+    def test_register_without_repository_url(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        project = registry.register("test", "/tmp/test", "python")
+        assert project.repository_url == ""
+
+    def test_backward_compatible_load(self, tmp_path: Path) -> None:
+        """Existing projects.yaml without repository_url loads without error."""
+        projects_file = tmp_path / "projects.yaml"
+        data = [
+            {
+                "name": "old",
+                "path": "/tmp/old",
+                "type": "python",
+                "registered_at": "2026-01-01",
+                "last_active": "",
+                "archived": False,
+            }
+        ]
+        projects_file.write_text(yaml.dump(data))
+        registry = ProjectRegistry(global_dir=tmp_path)
+        projects = registry.load()
+        assert len(projects) == 1
+        assert projects[0].repository_url == ""
+
+    def test_update_repository_url(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        registry.register("test", "/tmp/test", "python")
+        registry.update_repository_url("test", "https://github.com/t/t.git")
+        project = registry.find_by_name("test")
+        assert project is not None
+        assert project.repository_url == "https://github.com/t/t.git"
+
+    def test_update_repository_url_not_found(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        with pytest.raises(KeyError, match="not found"):
+            registry.update_repository_url("nonexistent", "https://example.com")
+
+    def test_update_repository_url_validates(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        registry.register("test", "/tmp/test", "python")
+        with pytest.raises(ValueError, match="plausible git URL"):
+            registry.update_repository_url("test", "ftp://invalid-scheme")
+
+    def test_valid_urls_accepted(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        valid_urls = [
+            "https://github.com/test/repo.git",
+            "git@github.com:test/repo.git",
+            "ssh://git@github.com/test/repo.git",
+            "/local/path/to/repo",
+        ]
+        for i, url in enumerate(valid_urls):
+            name = f"test-{i}"
+            registry.register(name, f"/tmp/{name}", "python", repository_url=url)
+            project = registry.find_by_name(name)
+            assert project is not None
+            assert project.repository_url == url
+
+    def test_repository_url_persists_through_serialization(self, tmp_path: Path) -> None:
+        registry = ProjectRegistry(global_dir=tmp_path)
+        registry.register(
+            "test", "/tmp/test", "python", repository_url="https://github.com/t/t.git"
+        )
+        # Load fresh
+        registry2 = ProjectRegistry(global_dir=tmp_path)
+        project = registry2.find_by_name("test")
+        assert project is not None
+        assert project.repository_url == "https://github.com/t/t.git"
 
 
 class TestProjectInitResult:

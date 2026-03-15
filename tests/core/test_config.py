@@ -20,6 +20,7 @@ from autopilot.core.config import (
     SafetyConfig,
     SchedulerConfig,
     UsageLimitsConfig,
+    WorkspaceConfig,
     _deep_merge,
 )
 
@@ -315,6 +316,58 @@ class TestDeploymentMonitoringConfig:
         assert "web" in loaded.deployment_monitoring.services
         assert loaded.deployment_monitoring.services["web"].staging_url == "http://staging.web"
         assert "custom" in loaded.deployment_monitoring.failure_patterns
+
+
+class TestWorkspaceConfig:
+    def test_defaults(self) -> None:
+        cfg = WorkspaceConfig()
+        assert cfg.enabled is False
+        assert cfg.base_dir == "~/.autopilot/workspaces"
+        assert cfg.cleanup_on_success is True
+        assert cfg.cleanup_on_failure is False
+        assert cfg.clone_depth == 0
+        assert cfg.max_workspaces == 5
+
+    def test_frozen(self) -> None:
+        cfg = WorkspaceConfig()
+        with pytest.raises(ValidationError):
+            cfg.enabled = True  # type: ignore[misc]
+
+    def test_rejects_negative_clone_depth(self) -> None:
+        with pytest.raises(ValidationError, match="clone_depth"):
+            WorkspaceConfig(clone_depth=-1)
+
+    def test_rejects_zero_max_workspaces(self) -> None:
+        with pytest.raises(ValidationError, match="max_workspaces"):
+            WorkspaceConfig(max_workspaces=0)
+
+    def test_yaml_round_trip_with_workspace(self, tmp_path: Path) -> None:
+        original = AutopilotConfig(
+            project=ProjectConfig(name="ws-test"),
+            workspace=WorkspaceConfig(
+                enabled=True,
+                base_dir="/tmp/workspaces",
+                cleanup_on_success=False,
+                clone_depth=1,
+                max_workspaces=10,
+            ),
+        )
+        yaml_path = tmp_path / "config.yaml"
+        original.to_yaml(yaml_path)
+        loaded = AutopilotConfig.from_yaml(yaml_path)
+
+        assert loaded.workspace.enabled is True
+        assert loaded.workspace.base_dir == "/tmp/workspaces"
+        assert loaded.workspace.cleanup_on_success is False
+        assert loaded.workspace.clone_depth == 1
+        assert loaded.workspace.max_workspaces == 10
+
+    def test_yaml_without_workspace_section(self, tmp_path: Path) -> None:
+        yaml_path = tmp_path / "config.yaml"
+        yaml_path.write_text("project:\n  name: no-workspace\n")
+        loaded = AutopilotConfig.from_yaml(yaml_path)
+        assert loaded.workspace.enabled is False
+        assert loaded.workspace.base_dir == "~/.autopilot/workspaces"
 
 
 class TestDeepMerge:

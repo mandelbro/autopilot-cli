@@ -10,7 +10,10 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # -- Enums --
 
@@ -52,6 +55,15 @@ class ViolationSeverity(StrEnum):
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
+
+
+class WorkspaceStatus(StrEnum):
+    CREATING = "creating"
+    READY = "ready"
+    ACTIVE = "active"
+    CLEANING = "cleaning"
+    CLEANED = "cleaned"
+    FAILED = "failed"
 
 
 # -- Core orchestration models (evolved from RepEngine) --
@@ -353,3 +365,22 @@ class EnforcementReport:
                 ],
             }
         )
+
+
+# -- Workspace isolation models (ADR-011) --
+
+
+@dataclass  # NOTE: Not frozen -- status transitions require mutability (precedent: Session)
+class WorkspaceInfo:
+    """Runtime workspace metadata for isolated agent execution."""
+
+    id: str
+    project_name: str
+    session_id: str
+    workspace_dir: Path
+    repository_url: str
+    status: WorkspaceStatus
+    created_at: datetime = field(default_factory=_utc_now)
+    cleaned_at: datetime | None = None
+    branch: str = ""
+    clone_depth: int = 0
