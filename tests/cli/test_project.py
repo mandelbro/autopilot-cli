@@ -53,9 +53,7 @@ class TestInitCommand:
 class TestDetectGitOrigin:
     @patch("autopilot.cli.project.subprocess.run")
     def test_returns_url_on_success(self, mock_run: MagicMock, tmp_path: Path) -> None:
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="https://github.com/test/repo.git\n"
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="https://github.com/test/repo.git\n")
         result = _detect_git_origin(tmp_path)
         assert result == "https://github.com/test/repo.git"
 

@@ -303,7 +303,9 @@ def initialize_project(
     files_created.append(str(gitignore_path.relative_to(root)))
 
     # Register in global projects.yaml
-    _register_global(name=name, path=str(root), project_type=project_type, repository_url=repository_url)
+    _register_global(
+        name=name, path=str(root), project_type=project_type, repository_url=repository_url
+    )
 
     # Register in SQLite (best-effort)
     _register_sqlite(name=name, path=str(root), project_type=project_type)

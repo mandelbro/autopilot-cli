@@ -377,9 +377,7 @@ def register_session_commands(app: typer.Typer) -> None:
         if workspace_id:
             try:
                 mgr.cleanup(workspace_id)
-                console.print(
-                    f"[success]Workspace {workspace_id[:8]} cleaned up.[/success]"
-                )
+                console.print(f"[success]Workspace {workspace_id[:8]} cleaned up.[/success]")
             except WorkspaceError as exc:
                 console.print(f"[error]{exc}[/error]")
                 raise typer.Exit(code=1) from None
@@ -389,9 +387,7 @@ def register_session_commands(app: typer.Typer) -> None:
                 console.print("[muted]No workspaces to clean up.[/muted]")
                 return
             if not force:
-                typer.confirm(
-                    f"Clean up {len(workspaces)} workspace(s)?", abort=True
-                )
+                typer.confirm(f"Clean up {len(workspaces)} workspace(s)?", abort=True)
             for ws in workspaces:
                 try:
                     mgr.cleanup(ws.id)
