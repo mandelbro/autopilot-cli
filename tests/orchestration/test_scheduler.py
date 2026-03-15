@@ -534,3 +534,45 @@ class TestWorkspaceIntegration:
 
         scheduler.run_cycle(_simple_plan("agent-a"))
         assert scheduler._cwd == original_cwd
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_bookkeep_failure_releases_lock_and_cleans_workspace(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        # Make bookkeeping fail
+        usage.record_cycle.side_effect = RuntimeError("DB connection lost")
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        with pytest.raises(RuntimeError, match="DB connection lost"):
+            scheduler.run_cycle(_simple_plan("agent-a"))
+
+        # Lock should be released
+        assert not scheduler._lock.is_alive()
+        # Workspace should be cleaned up
+        mock_ws_mgr.cleanup.assert_called_once_with("ws-id")
