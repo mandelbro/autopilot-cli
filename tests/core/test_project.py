@@ -218,6 +218,30 @@ class TestProjectRegistryRepositoryUrl:
         assert project.repository_url == "https://github.com/t/t.git"
 
 
+class TestInitializeProjectWithRepositoryUrl:
+    def test_repository_url_passed_to_registry(self, tmp_path: Path) -> None:
+        with patch("autopilot.core.project.get_global_dir", return_value=tmp_path / "global"):
+            initialize_project(
+                "url-test",
+                root_path=tmp_path,
+                repository_url="https://github.com/test/repo.git",
+            )
+            projects_file = tmp_path / "global" / "projects.yaml"
+            data = yaml.safe_load(projects_file.read_text())
+            assert data[0]["repository_url"] == "https://github.com/test/repo.git"
+
+    def test_empty_repository_url_by_default(self, tmp_path: Path) -> None:
+        with patch("autopilot.core.project.get_global_dir", return_value=tmp_path / "global"):
+            initialize_project("no-url-test", root_path=tmp_path)
+            projects_file = tmp_path / "global" / "projects.yaml"
+            data = yaml.safe_load(projects_file.read_text())
+            assert data[0]["repository_url"] == ""
+
+    def test_next_steps_include_workspace_hint(self, tmp_path: Path) -> None:
+        result = initialize_project("hint-test", root_path=tmp_path)
+        assert any("workspace" in step.lower() for step in result.next_steps)
+
+
 class TestProjectInitResult:
     def test_defaults(self) -> None:
         result = ProjectInitResult(

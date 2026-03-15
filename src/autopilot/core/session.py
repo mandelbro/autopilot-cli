@@ -6,6 +6,7 @@ across all projects per RFC Section 3.4.2.
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -141,6 +142,47 @@ class SessionManager:
                 )
 
         return cleaned
+
+    def set_workspace_path(self, session_id: str, workspace_dir: str) -> None:
+        """Store a workspace directory path in the session metadata."""
+        conn = self._db.get_connection()
+        try:
+            # Read existing metadata to preserve other keys
+            row = conn.execute(
+                "SELECT metadata FROM sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+            existing: dict[str, object] = {}
+            if row and row[0]:
+                try:
+                    existing = json.loads(str(row[0]))
+                except (json.JSONDecodeError, TypeError):
+                    existing = {}
+            existing["workspace_dir"] = workspace_dir
+            conn.execute(
+                "UPDATE sessions SET metadata = ? WHERE id = ?",
+                (json.dumps(existing), session_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def get_workspace_path(self, session_id: str) -> str | None:
+        """Retrieve the workspace directory path from session metadata."""
+        conn = self._db.get_connection()
+        try:
+            row = conn.execute(
+                "SELECT metadata FROM sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+            if not row or not row[0]:
+                return None
+            try:
+                data = json.loads(str(row[0]))
+                val = data.get("workspace_dir")
+                return str(val) if val is not None else None
+            except (json.JSONDecodeError, TypeError):
+                return None
+        finally:
+            conn.close()
 
     @staticmethod
     def _row_to_session(row: object) -> Session:

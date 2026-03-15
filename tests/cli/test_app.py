@@ -1,6 +1,8 @@
-"""Tests for autopilot.cli.app (Task 008)."""
+"""Tests for autopilot.cli.app (Task 008, 104)."""
 
 from __future__ import annotations
+
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -98,3 +100,36 @@ class TestStubCommands:
         """Migrate exits with code 1 when no RepEngine layout is found."""
         result = runner.invoke(app, ["migrate"])
         assert result.exit_code == 1
+
+
+class TestInitRepositoryUrl:
+    def test_init_help_shows_repository_url(self) -> None:
+        result = runner.invoke(app, ["init", "--help"])
+        assert result.exit_code == 0
+        assert "--repository-url" in result.output
+
+    @patch("autopilot.cli.project.run_init")
+    def test_init_passes_repository_url(self, mock_run_init: object) -> None:
+        result = runner.invoke(
+            app,
+            [
+                "init",
+                "--name",
+                "test-proj",
+                "--type",
+                "python",
+                "--repository-url",
+                "https://github.com/t/t.git",
+            ],
+        )
+        assert result.exit_code == 0
+        from unittest.mock import MagicMock
+
+        mock = mock_run_init  # type: ignore[assignment]
+        assert isinstance(mock, MagicMock)
+        mock.assert_called_once_with(
+            name="test-proj",
+            project_type="python",
+            root=".",
+            repository_url="https://github.com/t/t.git",
+        )

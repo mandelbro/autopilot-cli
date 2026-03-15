@@ -21,6 +21,17 @@ from autopilot.utils.db import Database
 from autopilot.utils.paths import find_autopilot_dir
 
 
+def _format_size(size_bytes: int) -> str:
+    """Format byte count as human-readable size."""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    if size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    if size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+    return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+
+
 def register_session_commands(app: typer.Typer) -> None:
     """Register all session subcommands on the given Typer app."""
 
@@ -30,9 +41,15 @@ def register_session_commands(app: typer.Typer) -> None:
             str | None,
             typer.Option("--project", "-p", help="Project name (defaults to active project)."),
         ] = None,
+        no_workspace: Annotated[
+            bool,
+            typer.Option("--no-workspace", help="Disable workspace isolation for this session."),
+        ] = False,
     ) -> None:
         """Start an autonomous session daemon for a project."""
         from autopilot.core.config import AutopilotConfig, ProjectConfig
+        from autopilot.core.project import ProjectRegistry
+        from autopilot.core.workspace import WorkspaceManager
         from autopilot.orchestration.agent_invoker import AgentInvoker
         from autopilot.orchestration.daemon import Daemon
         from autopilot.orchestration.scheduler import Scheduler
@@ -54,12 +71,23 @@ def register_session_commands(app: typer.Typer) -> None:
         db = Database(ap_dir / "autopilot.db")
         usage = UsageTracker(db=db, config=config)
         invoker = AgentInvoker(registry=None, config=config)  # type: ignore[arg-type]
+
+        # Create WorkspaceManager if workspace isolation is enabled and not overridden
+        workspace_manager: WorkspaceManager | None = None
+        if config.workspace.enabled and not no_workspace:
+            registry = ProjectRegistry()
+            workspace_manager = WorkspaceManager(
+                config=config.workspace,
+                project_registry=registry,
+            )
+
         scheduler = Scheduler(
             config=config,
             invoker=invoker,
             usage_tracker=usage,
             lock_dir=state_dir,
             cwd=ap_dir.parent,
+            workspace_manager=workspace_manager,
         )
 
         daemon = Daemon(
@@ -257,3 +285,120 @@ def register_session_commands(app: typer.Typer) -> None:
 
         for line in tail:
             sys.stdout.write(line)
+
+    # -- Workspace sub-group (Task 102) ----------------------------------------
+
+    workspace_app = typer.Typer(help="Workspace management commands.")
+    app.add_typer(workspace_app, name="workspace")
+
+    @workspace_app.command("list")
+    def workspace_list(
+        project: Annotated[
+            str | None,
+            typer.Option("--project", "-p", help="Filter by project."),
+        ] = None,
+    ) -> None:
+        """List all workspace directories with status and disk usage."""
+        from rich.table import Table
+
+        from autopilot.core.config import WorkspaceConfig
+        from autopilot.core.project import ProjectRegistry
+        from autopilot.core.workspace import WorkspaceManager
+
+        ap_dir = find_autopilot_dir()
+        if ap_dir is None:
+            console.print("[error]No .autopilot directory found.[/error]")
+            raise typer.Exit(code=1)
+
+        config = WorkspaceConfig()
+        registry = ProjectRegistry()
+        mgr = WorkspaceManager(config, registry)
+        workspaces = mgr.list_workspaces(project_name=project)
+
+        if not workspaces:
+            console.print("[muted]No workspaces found.[/muted]")
+            return
+
+        usage = mgr.disk_usage()
+
+        table = Table(title="Workspaces", width=100)
+        table.add_column("ID", width=10, no_wrap=True)
+        table.add_column("Project")
+        table.add_column("Session", width=10)
+        table.add_column("Status", width=10)
+        table.add_column("Path", style="dim")
+        table.add_column("Size", justify="right")
+
+        for ws in workspaces:
+            size_bytes = usage["workspaces"].get(ws.id, 0)
+            size_str = _format_size(size_bytes)
+            table.add_row(
+                ws.id[:8],
+                ws.project_name,
+                ws.session_id[:8],
+                format_status(ws.status.value),
+                str(ws.workspace_dir),
+                size_str,
+            )
+
+        console.print(table)
+        total = usage.get("total_bytes", 0)
+        console.print(f"\n[bold]Total disk usage:[/bold] {_format_size(total)}")
+
+    @workspace_app.command("cleanup")
+    def workspace_cleanup(
+        workspace_id: Annotated[
+            str | None,
+            typer.Argument(help="Workspace ID to clean up."),
+        ] = None,
+        all_workspaces: Annotated[
+            bool,
+            typer.Option("--all", help="Clean up all workspaces."),
+        ] = False,
+        force: Annotated[
+            bool,
+            typer.Option("--force", help="Skip confirmation."),
+        ] = False,
+    ) -> None:
+        """Clean up workspace directories."""
+        from autopilot.core.config import WorkspaceConfig
+        from autopilot.core.project import ProjectRegistry
+        from autopilot.core.workspace import WorkspaceError, WorkspaceManager
+
+        ap_dir = find_autopilot_dir()
+        if ap_dir is None:
+            console.print("[error]No .autopilot directory found.[/error]")
+            raise typer.Exit(code=1)
+
+        config = WorkspaceConfig()
+        registry = ProjectRegistry()
+        mgr = WorkspaceManager(config, registry)
+
+        if workspace_id:
+            try:
+                mgr.cleanup(workspace_id)
+                console.print(
+                    f"[success]Workspace {workspace_id[:8]} cleaned up.[/success]"
+                )
+            except WorkspaceError as exc:
+                console.print(f"[error]{exc}[/error]")
+                raise typer.Exit(code=1) from None
+        elif all_workspaces:
+            workspaces = mgr.list_workspaces()
+            if not workspaces:
+                console.print("[muted]No workspaces to clean up.[/muted]")
+                return
+            if not force:
+                typer.confirm(
+                    f"Clean up {len(workspaces)} workspace(s)?", abort=True
+                )
+            for ws in workspaces:
+                try:
+                    mgr.cleanup(ws.id)
+                    console.print(f"  Cleaned {ws.id[:8]}")
+                except WorkspaceError:
+                    console.print(f"  [warning]Failed to clean {ws.id[:8]}[/warning]")
+            console.print("[success]Cleanup complete.[/success]")
+        else:
+            console.print("[error]Specify a workspace ID or use --all.[/error]")
+            raise typer.Exit(code=1)

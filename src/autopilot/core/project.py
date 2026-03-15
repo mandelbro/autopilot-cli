@@ -257,6 +257,7 @@ def initialize_project(
     root_path: Path | None = None,
     *,
     template_overrides: dict[str, str] | None = None,
+    repository_url: str = "",
 ) -> ProjectInitResult:
     """Initialize a new autopilot project.
 
@@ -302,7 +303,7 @@ def initialize_project(
     files_created.append(str(gitignore_path.relative_to(root)))
 
     # Register in global projects.yaml
-    _register_global(name=name, path=str(root), project_type=project_type)
+    _register_global(name=name, path=str(root), project_type=project_type, repository_url=repository_url)
 
     # Register in SQLite (best-effort)
     _register_sqlite(name=name, path=str(root), project_type=project_type)
@@ -316,6 +317,7 @@ def initialize_project(
             "Edit .autopilot/config.yaml to customize settings",
             "Review agent prompts in .autopilot/agents/",
             "Run 'autopilot session start' to begin autonomous development",
+            "Set repository URL with 'autopilot project config workspace.repository_url <url>' for workspace isolation",
         ],
     )
 
@@ -347,12 +349,12 @@ def _render_templates(
     return files_created
 
 
-def _register_global(*, name: str, path: str, project_type: str) -> None:
+def _register_global(*, name: str, path: str, project_type: str, repository_url: str = "") -> None:
     """Register the project in ~/.autopilot/projects.yaml."""
     registry = ProjectRegistry()
     existing = registry.find_by_name(name)
     if existing is None:
-        registry.register(name, path, project_type)
+        registry.register(name, path, project_type, repository_url=repository_url)
     else:
         # Update existing entry via raw rewrite (idempotent)
         raw = registry._read_raw()  # pyright: ignore[reportPrivateUsage]
@@ -360,6 +362,8 @@ def _register_global(*, name: str, path: str, project_type: str) -> None:
             if p.get("name") == name:
                 p["path"] = path
                 p["type"] = project_type
+                if repository_url:
+                    p["repository_url"] = repository_url
                 break
         registry._write_raw(raw)  # pyright: ignore[reportPrivateUsage]
 

@@ -132,3 +132,65 @@ class TestCleanupOrphaned:
         mgr.create_session("proj-1", SessionType.MANUAL)
         cleaned = mgr.cleanup_orphaned()
         assert len(cleaned) == 0
+
+
+class TestWorkspacePath:
+    def test_set_and_get_workspace_path(self, mgr: SessionManager) -> None:
+        session = mgr.create_session("proj-1", SessionType.DAEMON)
+        mgr.set_workspace_path(session.id, "/tmp/ws/abc")
+        result = mgr.get_workspace_path(session.id)
+        assert result == "/tmp/ws/abc"
+
+    def test_get_workspace_path_when_not_set(self, mgr: SessionManager) -> None:
+        session = mgr.create_session("proj-1", SessionType.DAEMON)
+        result = mgr.get_workspace_path(session.id)
+        assert result is None
+
+    def test_set_workspace_path_updates_metadata(self, mgr: SessionManager, db: Database) -> None:
+        import json
+
+        session = mgr.create_session("proj-1", SessionType.CYCLE)
+        mgr.set_workspace_path(session.id, "/tmp/ws/xyz")
+        conn = db.get_connection()
+        try:
+            row = conn.execute(
+                "SELECT metadata FROM sessions WHERE id = ?", (session.id,)
+            ).fetchone()
+            assert row is not None
+            data = json.loads(row[0])
+            assert data["workspace_dir"] == "/tmp/ws/xyz"
+        finally:
+            conn.close()
+
+    def test_set_workspace_path_preserves_existing_metadata(
+        self, mgr: SessionManager, db: Database
+    ) -> None:
+        import json
+
+        session = mgr.create_session("proj-1", SessionType.DAEMON)
+        # Pre-populate metadata with another key
+        conn = db.get_connection()
+        try:
+            conn.execute(
+                "UPDATE sessions SET metadata = ? WHERE id = ?",
+                (json.dumps({"other_key": "other_value"}), session.id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        mgr.set_workspace_path(session.id, "/tmp/ws/merged")
+        result = mgr.get_workspace_path(session.id)
+        assert result == "/tmp/ws/merged"
+
+        # Verify the other key is still present
+        conn2 = db.get_connection()
+        try:
+            row = conn2.execute(
+                "SELECT metadata FROM sessions WHERE id = ?", (session.id,)
+            ).fetchone()
+            data = json.loads(row[0])
+            assert data["other_key"] == "other_value"
+            assert data["workspace_dir"] == "/tmp/ws/merged"
+        finally:
+            conn2.close()

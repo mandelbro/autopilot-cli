@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Any, cast
 
@@ -35,15 +36,37 @@ def _set_active_project(name: str) -> None:
     path.write_text(name)
 
 
-def run_init(*, name: str, project_type: str, root: str) -> None:
+def _detect_git_origin(root: Path) -> str:
+    """Try to detect the git remote origin URL. Returns empty string on failure."""
+    try:
+        proc = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if proc.returncode == 0:
+            return proc.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return ""
+
+
+def run_init(*, name: str, project_type: str, root: str, repository_url: str = "") -> None:
     """Shared init logic used by both ``autopilot init`` and ``autopilot project init``."""
     root_path = Path(root).resolve()
+
+    # Auto-detect repository URL if not provided
+    if not repository_url:
+        repository_url = _detect_git_origin(root_path)
 
     try:
         result = initialize_project(
             name=name,
             project_type=project_type,
             root_path=root_path,
+            repository_url=repository_url,
         )
     except (FileExistsError, ValueError) as exc:
         notification("error", str(exc))
@@ -80,9 +103,14 @@ def project_init(
         "-r",
         help="Project root directory.",
     ),
+    repository_url: str = typer.Option(
+        "",
+        "--repository-url",
+        help="Git repository URL for workspace isolation.",
+    ),
 ) -> None:
     """Initialize a new autopilot project with scaffolded .autopilot/ directory."""
-    run_init(name=name, project_type=project_type, root=root)
+    run_init(name=name, project_type=project_type, root=root, repository_url=repository_url)
 
 
 @project_app.command("list")

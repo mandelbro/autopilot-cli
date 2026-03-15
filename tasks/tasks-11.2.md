@@ -76,7 +76,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: Daemon and SessionManager workspace lifecycle
 - **File**: src/autopilot/orchestration/daemon.py, src/autopilot/core/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want the daemon to manage workspace creation per session and store workspace paths in session metadata, so that I can trace which workspace belongs to which session and workspaces are cleaned up when sessions end.
@@ -145,7 +145,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: CLI workspace list and cleanup commands
 - **File**: src/autopilot/cli/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want CLI commands to list active workspaces and manually clean up stale ones, so that I can monitor disk usage and recover from failed sessions without navigating the filesystem.
@@ -296,7 +296,7 @@ SessionStatusLookup = Callable[[str], SessionStatus | None]
 
 - **Title**: Update init command for repository URL and session start workspace flag
 - **File**: src/autopilot/cli/app.py, src/autopilot/cli/project.py, src/autopilot/core/project.py, src/autopilot/cli/session.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a developer setting up a new project, I want `autopilot init` to optionally capture the repository URL, so that workspace isolation works out of the box without additional configuration.
