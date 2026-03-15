@@ -380,7 +380,7 @@
 
 - **Title**: UAT memory integration for test pattern learning
 - **File**: src/autopilot/uat/memory.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Memory System for Test Pattern Learning, claude-flow memory integration
 
@@ -429,7 +429,7 @@
 
 - **Title**: UAT hooks intelligence and optimization
 - **File**: src/autopilot/uat/optimization.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 - **Spec References**: UAT Discovery: Hooks Intelligence for Improving Test Generation, Phase 4 deliverables
 
