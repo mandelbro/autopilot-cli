@@ -318,7 +318,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: Scheduler workspace integration
 - **File**: src/autopilot/orchestration/scheduler.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want the scheduler to automatically create an isolated workspace before each cycle, so that agent execution never touches my working directory.
