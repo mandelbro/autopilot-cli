@@ -14,7 +14,7 @@
 
 - **Title**: Structured logging module with structlog
 - **File**: src/autopilot/logging.py, src/autopilot/cli/app.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a system operator, I want structured JSON logging throughout the CLI, so that log output is machine-parsable, consistently formatted, and filterable by log level in production.
@@ -126,7 +126,7 @@
 
 - **Title**: Add pre-commit hooks configuration
 - **File**: .pre-commit-config.yaml
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want pre-commit hooks for formatting and linting, so that code quality checks run automatically before every commit and prevent non-compliant code from entering the repository.

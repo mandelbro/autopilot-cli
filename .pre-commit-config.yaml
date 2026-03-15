@@ -1,0 +1,15 @@
+exclude: '^(\.claude-flow/plugins/node_modules/|\.claude/skills/skill-builder/\.claude-flow/)'
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: '\.(map|cjs|d\.ts|d\.cts|html)$'
+      - id: trailing-whitespace
+        exclude: '\.(map|cjs|d\.ts|d\.cts|html)$'

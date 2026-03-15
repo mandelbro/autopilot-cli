@@ -64,8 +64,17 @@ def main(
         callback=_version_callback,
         is_eager=True,
     ),
+    log_level: str = typer.Option(
+        "INFO",
+        "--log-level",
+        help="Set log level (DEBUG, INFO, WARNING, ERROR, CRITICAL).",
+    ),
 ) -> None:
     """Autopilot CLI - autonomous development orchestrator."""
+    from autopilot.logging import configure_logging
+
+    configure_logging(level=log_level)
+
     if ctx.invoked_subcommand is None:
         from autopilot.cli.repl import AutopilotREPL
         from autopilot.utils.paths import get_global_dir

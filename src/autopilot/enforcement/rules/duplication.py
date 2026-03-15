@@ -90,7 +90,7 @@ def _extract_functions(
     """Extract all top-level and class-level function/async-function defs."""
     funcs: list[ast.FunctionDef | ast.AsyncFunctionDef] = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             funcs.append(node)
     return funcs
 
