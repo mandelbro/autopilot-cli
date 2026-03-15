@@ -185,9 +185,7 @@ class TestCloneRepository:
         assert result.error != ""
 
     def test_negative_depth_returns_error(self, tmp_path: Path) -> None:
-        result = clone_repository(
-            "https://example.com/repo.git", tmp_path / "target", depth=-1
-        )
+        result = clone_repository("https://example.com/repo.git", tmp_path / "target", depth=-1)
         assert result.success is False
 
     def test_zero_timeout_returns_error(self, tmp_path: Path) -> None:
