@@ -3,7 +3,7 @@
 - **Total Tasks**: 104
 - **Pending**: 13
 - **Complete**: 91
-- **Total Points**: 388
+- **Total Points**: 391
 - **Points Complete**: 330
 
 ## Project: Autopilot CLI
@@ -30,7 +30,7 @@
 - `tasks/tasks-9.md`: Contains Tasks 081 - 090 (10 tasks, 41 points) -- Main Phase 6-7: Templates, Migration, Multi-Project + UAT Phase 4: Learning
 - `tasks/tasks-10.md`: Contains Tasks 091 - 094 (4 tasks, 11 points) -- Dev Standards Compliance: Logging, Strict Types, Pre-commit, Config
 - `tasks/tasks-11.1.md`: Contains Tasks 095 - 099 (5 tasks, 18 points) -- Main Phase 8: Workspace Isolation (Core Models and WorkspaceManager)
-- `tasks/tasks-11.2.md`: Contains Tasks 100 - 104 (5 tasks, 15 points) -- Main Phase 8: Workspace Isolation (Pipeline Integration, CLI, Operations)
+- `tasks/tasks-11.2.md`: Contains Tasks 100 - 104 (5 tasks, 18 points) -- Main Phase 8: Workspace Isolation (Pipeline Integration, CLI, Operations)
 
 ## Phase Mapping
 
@@ -45,7 +45,7 @@
 | 5 | Enforcement Engine | 056-067 | 2-3 | 55 |
 | 6 | Discovery Integration | 077-083 | 2-3 | 26 |
 | 7 | Multi-Project | 084-088 | 2-3 | 21 |
-| 8 | Workspace Isolation | 095-104 | 2-3 | 33 |
+| 8 | Workspace Isolation | 095-104 | 2-3 | 36 |
 
 ### UAT Framework Phases
 
