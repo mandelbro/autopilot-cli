@@ -253,3 +253,326 @@ class TestRunLoop:
     def test_raises_without_plan_fn(self, scheduler: Scheduler) -> None:
         with pytest.raises(SchedulerError, match="plan_fn"):
             scheduler.run_loop(1)
+
+
+class TestWorkspaceIntegration:
+    """Tests for workspace isolation integration (Task 099)."""
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_workspace_created_when_enabled(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "test-session-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        plan = _simple_plan("agent-a")
+        scheduler.run_cycle(plan)
+
+        mock_ws_mgr.create.assert_called_once()
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_dispatches_use_workspace_cwd(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_dir = tmp_path / "ws" / "test-workspace"
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = ws_dir
+        mock_ws_info.id = "test-session-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        plan = _simple_plan("agent-a")
+        scheduler.run_cycle(plan)
+
+        # Verify invoker was called with workspace cwd
+        call_args = invoker.invoke.call_args
+        assert call_args.kwargs.get("cwd") == ws_dir
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_workspace_cleanup_on_success(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_config = WorkspaceConfig(
+            enabled=True, cleanup_on_success=True, base_dir=str(tmp_path / "ws")
+        )
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        plan = _simple_plan("agent-a")
+        scheduler.run_cycle(plan)
+
+        mock_ws_mgr.cleanup.assert_called_once_with("ws-id")
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_workspace_preserved_on_failure(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_config = WorkspaceConfig(
+            enabled=True,
+            cleanup_on_success=True,
+            cleanup_on_failure=False,
+            base_dir=str(tmp_path / "ws"),
+        )
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        invoker.invoke.return_value = InvokeResult(
+            agent="a", status=DispatchStatus.FAILED, error="Error", model_used="sonnet"
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        plan = _simple_plan("agent-a")
+        scheduler.run_cycle(plan)
+
+        # cleanup_on_failure=False, so cleanup should NOT be called
+        mock_ws_mgr.cleanup.assert_not_called()
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_no_workspace_when_disabled(
+        self,
+        _git: MagicMock,
+        scheduler: Scheduler,
+    ) -> None:
+        """When workspace.enabled=false, behavior is unchanged."""
+        plan = _simple_plan("agent-a")
+        result = scheduler.run_cycle(plan)
+        assert result.status == CycleStatus.COMPLETED
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_workspace_creation_failure_raises_scheduler_error(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+        from autopilot.core.workspace import WorkspaceError
+
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_mgr.create.side_effect = WorkspaceError("Clone failed")
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        with pytest.raises(SchedulerError, match="Workspace creation failed"):
+            scheduler.run_cycle(_simple_plan("agent-a"))
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_workspace_cleanup_failure_logged_not_raised(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+        from autopilot.core.workspace import WorkspaceError
+
+        ws_config = WorkspaceConfig(
+            enabled=True, cleanup_on_success=True, base_dir=str(tmp_path / "ws")
+        )
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+        mock_ws_mgr.cleanup.side_effect = WorkspaceError("Cleanup failed")
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        plan = _simple_plan("agent-a")
+        # Should NOT raise even though cleanup fails
+        result = scheduler.run_cycle(plan)
+        assert result.status == CycleStatus.COMPLETED
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_cwd_restored_after_cycle(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        original_cwd = tmp_path
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=original_cwd,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        scheduler.run_cycle(_simple_plan("agent-a"))
+        assert scheduler._cwd == original_cwd
+
+    @patch("autopilot.orchestration.scheduler.git.validate_git_state", return_value=[])
+    def test_bookkeep_failure_releases_lock_and_cleans_workspace(
+        self,
+        _git: MagicMock,
+        invoker: MagicMock,
+        usage: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        from autopilot.core.config import WorkspaceConfig
+
+        ws_config = WorkspaceConfig(enabled=True, base_dir=str(tmp_path / "ws"))
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            workspace=ws_config,
+        )
+
+        mock_ws_mgr = MagicMock()
+        mock_ws_info = MagicMock()
+        mock_ws_info.workspace_dir = tmp_path / "ws" / "test-workspace"
+        mock_ws_info.id = "ws-id"
+        mock_ws_mgr.create.return_value = mock_ws_info
+
+        # Make bookkeeping fail
+        usage.record_cycle.side_effect = RuntimeError("DB connection lost")
+
+        scheduler = Scheduler(
+            config=config,
+            invoker=invoker,
+            usage_tracker=usage,
+            lock_dir=tmp_path,
+            cwd=tmp_path,
+            workspace_manager=mock_ws_mgr,
+        )
+
+        with pytest.raises(RuntimeError, match="DB connection lost"):
+            scheduler.run_cycle(_simple_plan("agent-a"))
+
+        # Lock should be released
+        assert not scheduler._lock.is_alive()
+        # Workspace should be cleaned up
+        mock_ws_mgr.cleanup.assert_called_once_with("ws-id")

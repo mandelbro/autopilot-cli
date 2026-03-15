@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from autopilot.core.config import AutopilotConfig
+    from autopilot.core.models import WorkspaceInfo
+    from autopilot.core.workspace import WorkspaceManager
     from autopilot.orchestration.agent_invoker import AgentInvoker, InvokeResult
     from autopilot.orchestration.dispatcher import DispatchPlan
     from autopilot.orchestration.usage import UsageTracker
@@ -78,11 +80,13 @@ class Scheduler:
         *,
         lock_dir: Path | None = None,
         cwd: Path | None = None,
+        workspace_manager: WorkspaceManager | None = None,
     ) -> None:
         self._config = config
         self._invoker = invoker
         self._usage = usage_tracker
         self._cwd = cwd
+        self._workspace_manager = workspace_manager
         self._circuit_breaker = CircuitBreaker(
             consecutive_limit=config.scheduler.consecutive_timeout_limit
         )
@@ -106,15 +110,46 @@ class Scheduler:
         # Phase 1: Planning
         self._phase_plan(project_id)
 
+        # Workspace setup (after planning, before execution)
+        workspace_info: WorkspaceInfo | None = None
+        original_cwd = self._cwd
+        if self._workspace_manager is not None and self._config.workspace.enabled:
+            try:
+                workspace_info = self._workspace_manager.create(
+                    project_id,
+                    ctx.cycle_id,
+                    branch=self._config.git.base_branch,
+                )
+                self._cwd = workspace_info.workspace_dir
+            except Exception as exc:
+                self._lock.release()
+                msg = f"Workspace creation failed: {exc}"
+                raise SchedulerError(msg) from exc
+
         # Phase 2: Execution
         try:
             self._phase_execute(ctx, dispatch_plan)
         finally:
+            # Restore original cwd before bookkeeping
+            self._cwd = original_cwd
+
             # Phase 3: Bookkeeping (always runs, lock always released)
             try:
                 result = self._phase_bookkeep(ctx)
-            finally:
+            except Exception:
                 self._lock.release()
+                # Clean up workspace on bookkeeping failure if possible
+                if workspace_info is not None and self._workspace_manager is not None:
+                    try:
+                        self._workspace_manager.cleanup(workspace_info.id)
+                    except Exception:
+                        _log.exception("workspace_cleanup_after_bookkeep_failure")
+                raise
+            self._lock.release()
+
+            # Workspace cleanup (after lock release)
+            if workspace_info is not None and self._workspace_manager is not None:
+                self._cleanup_workspace(workspace_info, result)
 
         return result
 
@@ -142,6 +177,27 @@ class Scheduler:
     def stop(self) -> None:
         """Signal the scheduler loop to stop after the current cycle."""
         self._running = False
+
+    def _cleanup_workspace(self, workspace_info: WorkspaceInfo, result: CycleResult) -> None:
+        """Clean up workspace based on config and cycle result."""
+        should_cleanup = (
+            result.status != CycleStatus.FAILED and self._config.workspace.cleanup_on_success
+        ) or (result.status == CycleStatus.FAILED and self._config.workspace.cleanup_on_failure)
+
+        if should_cleanup:
+            try:
+                assert self._workspace_manager is not None  # type narrowing
+                self._workspace_manager.cleanup(workspace_info.id)
+            except Exception:
+                _log.exception(
+                    "workspace_cleanup_failed",
+                    extra={"workspace_dir": str(workspace_info.workspace_dir)},
+                )
+        else:
+            _log.info(
+                "workspace_preserved",
+                extra={"workspace_dir": str(workspace_info.workspace_dir)},
+            )
 
     def _phase_plan(self, project_id: str) -> None:
         """Phase 1: Acquire lock, validate state, check limits."""
