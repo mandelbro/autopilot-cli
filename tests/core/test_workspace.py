@@ -150,9 +150,18 @@ class TestWorkspaceManagerCreate:
         self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
     ) -> None:
         config, registry, base_dir = workspace_setup
+        # Detect the actual default branch name (main or master)
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=registry.find_by_name("test-project").path,  # type: ignore[union-attr]
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        branch = result.stdout.strip()
         mgr = WorkspaceManager(config, registry)
-        info = mgr.create("test-project", "session-12345678", branch="main")
-        assert info.branch == "main"
+        info = mgr.create("test-project", "session-12345678", branch=branch)
+        assert info.branch == branch
         assert info.status == WorkspaceStatus.READY
 
 
