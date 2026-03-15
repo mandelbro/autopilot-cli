@@ -11,6 +11,7 @@ import json
 import logging
 import shutil
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -230,8 +231,6 @@ class WorkspaceManager:
 
     @staticmethod
     def _dict_to_info(d: dict[str, Any]) -> WorkspaceInfo:
-        from datetime import datetime
-
         return WorkspaceInfo(
             id=d["id"],
             project_name=d["project_name"],

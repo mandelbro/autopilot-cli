@@ -164,6 +164,47 @@ class TestWorkspaceManagerCreate:
         assert info.branch == branch
         assert info.status == WorkspaceStatus.READY
 
+    def test_clone_failure_cleans_partial_dir_and_skips_manifest(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        """When clone fails, partial directory is removed and manifest is not updated."""
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+
+        # Register a project with a valid-looking but nonexistent repo path to trigger clone failure
+        registry.register(
+            "bad-project", "/tmp/bad", "python", repository_url="/nonexistent/repo/path"
+        )
+
+        with pytest.raises(WorkspaceError, match="Git clone failed"):
+            mgr.create("bad-project", "session-12345678")
+
+        # Verify no workspace directory left behind
+        expected_dir = base_dir / "bad-project-session-"
+        assert not expected_dir.exists()
+
+        # Verify manifest was not updated
+        assert mgr.list_workspaces() == []
+
+    def test_no_autopilot_dir_in_source_skips_copy(self, tmp_path: Path) -> None:
+        """When source project has no .autopilot/ dir, workspace is still created."""
+        base_dir = tmp_path / "workspaces"
+        config = WorkspaceConfig(enabled=True, base_dir=str(base_dir))
+
+        # Create a source repo WITHOUT .autopilot/
+        source = _make_git_repo(tmp_path / "no-autopilot-repo")
+
+        registry = ProjectRegistry(global_dir=tmp_path / "global")
+        registry.register("no-ap", str(source), "python", repository_url=str(source))
+
+        mgr = WorkspaceManager(config, registry)
+        info = mgr.create("no-ap", "session-12345678")
+
+        assert info.status == WorkspaceStatus.READY
+        assert (info.workspace_dir / "README.md").exists()
+        # .autopilot/ should not exist in workspace since source doesn't have it
+        assert not (info.workspace_dir / ".autopilot").exists()
+
 
 class TestWorkspaceManagerCleanup:
     def test_cleanup_removes_directory(
