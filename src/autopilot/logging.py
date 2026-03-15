@@ -11,6 +11,8 @@ import logging
 
 import structlog
 
+_VALID_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
+
 
 def configure_logging(level: str = "INFO") -> None:
     """Configure structured logging for the CLI.
@@ -20,8 +22,15 @@ def configure_logging(level: str = "INFO") -> None:
 
     Args:
         level: Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+
+    Raises:
+        ValueError: If *level* is not a recognized log level name.
     """
-    numeric_level = logging.getLevelName(level)
+    upper_level = level.upper()
+    if upper_level not in _VALID_LEVELS:
+        msg = f"Invalid log level: {level!r}. Must be one of {sorted(_VALID_LEVELS)}"
+        raise ValueError(msg)
+    numeric_level = logging.getLevelName(upper_level)
     logging.basicConfig(level=numeric_level, format="%(message)s", force=True)
     structlog.configure(
         processors=[

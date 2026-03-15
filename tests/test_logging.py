@@ -7,6 +7,7 @@ import logging
 from io import StringIO
 from unittest.mock import patch
 
+import pytest
 import structlog
 
 from autopilot.logging import configure_logging
@@ -15,28 +16,17 @@ from autopilot.logging import configure_logging
 class TestConfigureLogging:
     """Tests for the configure_logging function."""
 
-    def test_configures_structlog_with_json_renderer(self) -> None:
+    def test_configures_structlog_with_json_renderer(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Verify structlog is configured with JSON rendering."""
         configure_logging()
-
         logger = structlog.get_logger()
-        # structlog should produce valid JSON output
-        output = StringIO()
-        handler = logging.StreamHandler(output)
-        handler.setLevel(logging.DEBUG)
+        logger.info("test message", key="value")
 
-        root_logger = logging.getLogger()
-        root_logger.addHandler(handler)
-        try:
-            logger.info("test message", key="value")
-            log_output = output.getvalue().strip()
-            if log_output:
-                parsed = json.loads(log_output)
-                assert parsed["key"] == "value"
-                assert "timestamp" in parsed
-                assert "level" in parsed
-        finally:
-            root_logger.removeHandler(handler)
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out.strip())
+        assert parsed["key"] == "value"
+        assert "timestamp" in parsed
+        assert "level" in parsed
 
     def test_default_level_is_info(self) -> None:
         """Verify default log level is INFO."""
@@ -66,22 +56,23 @@ class TestConfigureLogging:
             assert processors is not None
             assert len(processors) == 3
 
-    def test_output_is_valid_json(self) -> None:
+    def test_output_is_valid_json(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Verify log output is parseable JSON."""
         configure_logging(level="DEBUG")
-        output = StringIO()
-        handler = logging.StreamHandler(output)
-        handler.setLevel(logging.DEBUG)
+        logger = structlog.get_logger()
+        logger.debug("json check", number=42)
 
-        root_logger = logging.getLogger()
-        root_logger.addHandler(handler)
-        try:
-            logger = structlog.get_logger()
-            logger.debug("json check", number=42)
-            log_output = output.getvalue().strip()
-            if log_output:
-                parsed = json.loads(log_output)
-                assert parsed["number"] == 42
-                assert parsed["event"] == "json check"
-        finally:
-            root_logger.removeHandler(handler)
+        captured = capsys.readouterr()
+        parsed = json.loads(captured.out.strip())
+        assert parsed["number"] == 42
+        assert parsed["event"] == "json check"
+
+    def test_invalid_level_raises_value_error(self) -> None:
+        """Verify invalid log level raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid log level"):
+            configure_logging(level="TYPO")
+
+    def test_invalid_level_misspelling(self) -> None:
+        """Verify misspelled level raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid log level"):
+            configure_logging(level="DEBU")
