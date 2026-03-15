@@ -22,7 +22,7 @@ class TestSessionHelp:
     def test_session_help_shows_commands(self) -> None:
         result = runner.invoke(app, ["session", "--help"])
         assert result.exit_code == 0
-        for cmd in ("start", "stop", "pause", "resume", "list", "attach", "log"):
+        for cmd in ("start", "stop", "pause", "resume", "list", "attach", "log", "workspace"):
             assert cmd in result.output
 
 
@@ -30,6 +30,20 @@ class TestSessionStart:
     @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
     def test_no_autopilot_dir(self, _find: MagicMock) -> None:
         result = runner.invoke(app, ["session", "start"])
+        assert result.exit_code == 1
+        assert "No .autopilot directory" in result.output
+
+
+class TestSessionStartNoWorkspaceFlag:
+    def test_session_start_help_shows_no_workspace(self) -> None:
+        result = runner.invoke(app, ["session", "start", "--help"])
+        assert result.exit_code == 0
+        assert "no" in result.output and "workspace" in result.output
+
+    @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_workspace_flag_accepted(self, _find: MagicMock) -> None:
+        """The --no-workspace flag is accepted without error (even if no .autopilot dir)."""
+        result = runner.invoke(app, ["session", "start", "--no-workspace"])
         assert result.exit_code == 1
         assert "No .autopilot directory" in result.output
 
@@ -291,6 +305,63 @@ class TestCycleCommand:
         assert result.exit_code == 0
         assert "Running single cycle" in result.output
         mock_scheduler.run_cycle.assert_called_once()
+
+
+class TestFormatSize:
+    def test_bytes(self) -> None:
+        from autopilot.cli.session import _format_size
+
+        assert _format_size(512) == "512 B"
+
+    def test_kilobytes(self) -> None:
+        from autopilot.cli.session import _format_size
+
+        assert "KB" in _format_size(2048)
+
+    def test_megabytes(self) -> None:
+        from autopilot.cli.session import _format_size
+
+        assert "MB" in _format_size(2 * 1024 * 1024)
+
+    def test_gigabytes(self) -> None:
+        from autopilot.cli.session import _format_size
+
+        assert "GB" in _format_size(2 * 1024 * 1024 * 1024)
+
+
+class TestWorkspaceList:
+    @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["session", "workspace", "list"])
+        assert result.exit_code == 1
+
+    @patch("autopilot.core.workspace.WorkspaceManager.list_workspaces", return_value=[])
+    @patch("autopilot.core.workspace.WorkspaceManager.__init__", return_value=None)
+    @patch(f"{_MOD}.find_autopilot_dir")
+    def test_empty_list(
+        self,
+        mock_find: MagicMock,
+        _init: MagicMock,
+        _list: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        mock_find.return_value = tmp_path
+        result = runner.invoke(app, ["session", "workspace", "list"])
+        assert result.exit_code == 0
+        assert "No workspaces found" in result.output
+
+
+class TestWorkspaceCleanup:
+    @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
+    def test_no_autopilot_dir(self, _find: MagicMock) -> None:
+        result = runner.invoke(app, ["session", "workspace", "cleanup"])
+        assert result.exit_code == 1
+
+    def test_no_id_no_all_exits_error(self, tmp_path: Path) -> None:
+        with patch(f"{_MOD}.find_autopilot_dir", return_value=tmp_path):
+            result = runner.invoke(app, ["session", "workspace", "cleanup"])
+        assert result.exit_code == 1
+        assert "Specify a workspace ID" in result.output
 
 
 class TestWatchCommand:

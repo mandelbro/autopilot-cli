@@ -107,11 +107,16 @@ def init(
         autocompletion=complete_project_types,
     ),
     root: str = typer.Option(".", "--root", "-r", help="Project root directory."),
+    repository_url: str = typer.Option(
+        "",
+        "--repository-url",
+        help="Git repository URL for workspace isolation.",
+    ),
 ) -> None:
     """Initialize a new autopilot project (delegates to ``project init``)."""
     from autopilot.cli.project import run_init
 
-    run_init(name=name, project_type=project_type, root=root)
+    run_init(name=name, project_type=project_type, root=root, repository_url=repository_url)
 
 
 def _resolve_project(project: str = "") -> tuple[Path, str]:

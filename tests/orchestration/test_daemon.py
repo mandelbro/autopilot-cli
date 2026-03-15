@@ -13,6 +13,7 @@ from autopilot.core.config import (
     AutopilotConfig,
     ProjectConfig,
     SchedulerConfig,
+    WorkspaceConfig,
 )
 from autopilot.orchestration.daemon import (
     Daemon,
@@ -217,3 +218,93 @@ class TestStopDaemon:
     def test_stop_no_daemon(self, tmp_path: Path) -> None:
         result = stop_daemon(tmp_path / "state")
         assert result is False
+
+
+class TestDaemonWorkspace:
+    def test_workspace_manager_stored(self, tmp_path: Path) -> None:
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            scheduler=SchedulerConfig(interval_seconds=1),
+            workspace=WorkspaceConfig(enabled=True),
+        )
+        mock_ws = MagicMock()
+        d = Daemon(
+            config=config,
+            scheduler=MagicMock(),
+            state_dir=tmp_path / "state",
+            log_dir=tmp_path / "logs",
+            workspace_manager=mock_ws,
+        )
+        assert d._workspace_manager is mock_ws
+
+    @patch("autopilot.orchestration.daemon.find_orphaned_processes", return_value=[])
+    def test_workspace_manager_passed_to_scheduler(
+        self, _orphans: MagicMock, tmp_path: Path
+    ) -> None:
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            scheduler=SchedulerConfig(interval_seconds=1),
+            workspace=WorkspaceConfig(enabled=True),
+        )
+        mock_scheduler = MagicMock()
+        mock_scheduler._workspace_manager = None
+        mock_ws = MagicMock()
+        d = Daemon(
+            config=config,
+            scheduler=mock_scheduler,
+            state_dir=tmp_path / "state",
+            log_dir=tmp_path / "logs",
+            workspace_manager=mock_ws,
+        )
+        d._run_loop = lambda: None  # type: ignore[assignment]
+        d.start()
+        assert mock_scheduler._workspace_manager is mock_ws
+
+    def test_workspace_disabled_no_change(self, tmp_path: Path) -> None:
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            scheduler=SchedulerConfig(interval_seconds=1),
+            workspace=WorkspaceConfig(enabled=False),
+        )
+        d = Daemon(
+            config=config,
+            scheduler=MagicMock(),
+            state_dir=tmp_path / "state",
+            log_dir=tmp_path / "logs",
+        )
+        assert d._workspace_manager is None
+
+
+class TestRunLoopDispatchPlan:
+    def test_run_loop_uses_dispatch_plan(self, tmp_path: Path) -> None:
+        """Verify _run_loop passes a DispatchPlan (not a string) to run_cycle."""
+        from autopilot.orchestration.dispatcher import DispatchPlan
+
+        config = AutopilotConfig(
+            project=ProjectConfig(name="test-project"),
+            scheduler=SchedulerConfig(interval_seconds=1),
+        )
+        mock_scheduler = MagicMock()
+        mock_scheduler._workspace_manager = None
+
+        d = Daemon(
+            config=config,
+            scheduler=mock_scheduler,
+            state_dir=tmp_path / "state",
+            log_dir=tmp_path / "logs",
+        )
+        d._state_dir.mkdir(parents=True, exist_ok=True)
+        d._log_dir.mkdir(parents=True, exist_ok=True)
+        d._state = DaemonState.RUNNING
+
+        # Make run_cycle stop the daemon after first call
+        def stop_after_cycle(plan: object) -> None:
+            d._stop_event.set()
+
+        mock_scheduler.run_cycle.side_effect = stop_after_cycle
+
+        d._run_loop()
+
+        mock_scheduler.run_cycle.assert_called_once()
+        call_arg = mock_scheduler.run_cycle.call_args[0][0]
+        assert isinstance(call_arg, DispatchPlan)

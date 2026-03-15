@@ -16,12 +16,14 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from autopilot.core.models import DispatchPlan
 from autopilot.utils.process import PidFile, find_orphaned_processes, is_running
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from autopilot.core.config import AutopilotConfig
+    from autopilot.core.workspace import WorkspaceManager
     from autopilot.orchestration.scheduler import Scheduler
 
 _log = logging.getLogger(__name__)
@@ -62,12 +64,14 @@ class Daemon:
         state_dir: Path,
         log_dir: Path,
         log_max_bytes: int = _DEFAULT_LOG_MAX_BYTES,
+        workspace_manager: WorkspaceManager | None = None,
     ) -> None:
         self._config = config
         self._scheduler = scheduler
         self._state_dir = state_dir
         self._log_dir = log_dir
         self._log_max_bytes = log_max_bytes
+        self._workspace_manager = workspace_manager
 
         self._pid_file = PidFile(state_dir / "daemon.pid", ttl_seconds=7200)
         self._state = DaemonState.STOPPED
@@ -85,6 +89,16 @@ class Daemon:
             existing_pid = self._pid_file.read_pid()
             msg = f"Daemon already running (PID {existing_pid})"
             raise RuntimeError(msg)
+
+        # Forward workspace manager to scheduler if not already set
+        if self._workspace_manager is not None and self._scheduler._workspace_manager is None:  # pyright: ignore[reportPrivateUsage]
+            self._scheduler._workspace_manager = self._workspace_manager  # pyright: ignore[reportPrivateUsage]
+        elif (
+            self._config.workspace.enabled
+            and self._workspace_manager is None
+            and self._scheduler._workspace_manager is None  # pyright: ignore[reportPrivateUsage]
+        ):
+            _log.warning("daemon_workspace_enabled_but_no_manager")
 
         self._state = DaemonState.RUNNING
         self._start_time = time.monotonic()
@@ -146,9 +160,8 @@ class Daemon:
             self._rotate_log_if_needed()
 
             try:
-                self._scheduler.run_cycle(
-                    self._scheduler._config.project.name  # type: ignore[arg-type]
-                )
+                plan = DispatchPlan()
+                self._scheduler.run_cycle(plan)
                 self._cycles_completed += 1
             except Exception:
                 _log.exception("daemon_cycle_error")
