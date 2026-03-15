@@ -45,7 +45,7 @@ class EffectivenessReport:
     total_tests: int
     total_bugs_caught: int
     overall_effectiveness: float
-    categories: list[CategoryEffectiveness] = field(default_factory=list)
+    categories: list[CategoryEffectiveness] = field(default_factory=list[CategoryEffectiveness])
     generated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 

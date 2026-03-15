@@ -29,7 +29,7 @@ class TestPattern:
     name: str
     test_type: str  # acceptance, behavioral, compliance, ux
     template: str
-    tags: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list[str])
     usage_count: int = 0
     last_used: str = ""
 
@@ -55,7 +55,7 @@ class UATResult:
     passed: int
     failed: int
     skipped: int
-    failures: list[str] = field(default_factory=list)
+    failures: list[str] = field(default_factory=list[str])
     recorded_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 

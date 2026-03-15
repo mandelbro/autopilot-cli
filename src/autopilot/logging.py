@@ -21,7 +21,7 @@ def configure_logging(level: str = "INFO") -> None:
     Args:
         level: Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL).
     """
-    numeric_level = logging.getLevelName(level)
+    numeric_level: int = logging.getLevelNamesMapping().get(level.upper(), logging.INFO)
     logging.basicConfig(level=numeric_level, format="%(message)s", force=True)
     structlog.configure(
         processors=[

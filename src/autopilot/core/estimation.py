@@ -63,7 +63,7 @@ class EstimationResult:
     task_id: str
     recommended_points: int
     rationale: str
-    complexity_factors: list[str] = field(default_factory=list)
+    complexity_factors: list[str] = field(default_factory=lambda: list[str]())
     confidence: float = 0.0
 
     def __hash__(self) -> int:  # pragma: no cover

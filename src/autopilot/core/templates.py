@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
@@ -111,24 +111,26 @@ class TemplateRenderer:
     def validate(self) -> list[str]:
         """Check that all expected template files are present. Returns issues."""
         issues: list[str] = []
-        expected = self._template_config.get("expected_files", [])
-        if not isinstance(expected, list):
+        raw_expected = self._template_config.get("expected_files", [])
+        if not isinstance(raw_expected, list):
             return issues
+        expected = cast("list[str]", raw_expected)
 
-        search_paths = []
+        search_paths: list[Path] = []
         if self._user_dir.is_dir():
             search_paths.append(self._user_dir)
         if self._package_dir.is_dir():
             search_paths.append(self._package_dir)
 
         for fname in expected:
+            fname_str: str = str(fname)
             found = False
             for sp in search_paths:
-                if (sp / fname).exists() or (sp / f"{fname}.j2").exists():
+                if (sp / fname_str).exists() or (sp / f"{fname_str}.j2").exists():
                     found = True
                     break
             if not found:
-                issues.append(f"Missing expected template: {fname}")
+                issues.append(f"Missing expected template: {fname_str}")
         return issues
 
     def _load_template_config(self) -> dict[str, Any]:
@@ -139,7 +141,7 @@ class TemplateRenderer:
                 try:
                     data = yaml.safe_load(config_path.read_text())
                     if isinstance(data, dict):
-                        return data
+                        return cast("dict[str, Any]", data)
                 except yaml.YAMLError:
                     _log.warning("Invalid _template.yaml in %s", d)
         return {}

@@ -42,9 +42,9 @@ class TaskContext:
     sprint_points: int | str = 0
     user_story: str = ""
     outcome: str = ""
-    acceptance_criteria: list[str] = field(default_factory=list)
+    acceptance_criteria: list[str] = field(default_factory=list[str])
     prompt_text: str = ""
-    spec_references: list[SpecReference] = field(default_factory=list)
+    spec_references: list[SpecReference] = field(default_factory=list[SpecReference])
 
     def __hash__(self) -> int:  # pragma: no cover
         return hash(self.task_id)

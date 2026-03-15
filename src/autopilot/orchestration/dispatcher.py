@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from autopilot.core.models import Dispatch, DispatchPlan
 
@@ -160,7 +160,7 @@ def _extract_balanced(text: str, start: int, open_ch: str, close_ch: str) -> str
 def _parse_json_to_plan(json_str: str) -> DispatchPlan:
     """Parse a JSON string into a DispatchPlan."""
     try:
-        data = json.loads(json_str)
+        data: object = json.loads(json_str)
     except json.JSONDecodeError as exc:
         msg = f"Invalid JSON in dispatch plan: {exc}"
         raise DispatchParseError(msg) from exc
@@ -170,27 +170,31 @@ def _parse_json_to_plan(json_str: str) -> DispatchPlan:
 
     if isinstance(data, list):
         # List of dispatch objects
-        for i, item in enumerate(data):
+        data_list = cast("list[object]", data)
+        for i, item in enumerate(data_list):
             if not isinstance(item, dict):
                 msg = f"Dispatch entry {i} must be a mapping, got {type(item).__name__}"
                 raise DispatchParseError(msg)
-            dispatches.append(_normalize_and_create_dispatch(item, i))
+            dispatches.append(_normalize_and_create_dispatch(cast("dict[str, object]", item), i))
     elif isinstance(data, dict):
+        data_dict = cast("dict[str, object]", data)
         # Could be a single dispatch or a plan with "dispatches" key
-        if "dispatches" in data:
-            raw_dispatches = data["dispatches"]
+        if "dispatches" in data_dict:
+            raw_dispatches = data_dict["dispatches"]
             if not isinstance(raw_dispatches, list):
                 msg = f"'dispatches' must be a list, got {type(raw_dispatches).__name__}"
                 raise DispatchParseError(msg)
-            for i, item in enumerate(raw_dispatches):
+            items = cast("list[object]", raw_dispatches)
+            for i, item in enumerate(items):
                 if not isinstance(item, dict):
                     msg = f"Dispatch entry {i} must be a mapping, got {type(item).__name__}"
                     raise DispatchParseError(msg)
-                dispatches.append(_normalize_and_create_dispatch(item, i))
-            summary = data.get("summary", "")
+                dispatches.append(_normalize_and_create_dispatch(cast("dict[str, object]", item), i))
+            raw_summary = data_dict.get("summary", "")
+            summary = str(raw_summary) if raw_summary else ""
         else:
             # Single dispatch object
-            dispatches.append(_normalize_and_create_dispatch(data, 0))
+            dispatches.append(_normalize_and_create_dispatch(data_dict, 0))
     else:
         msg = f"Dispatch plan must be a list or mapping, got {type(data).__name__}"
         raise DispatchParseError(msg)

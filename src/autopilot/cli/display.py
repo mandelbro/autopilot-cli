@@ -164,11 +164,13 @@ class ProjectState:
     active_sessions: int = 0
     sprint_total: int = 0
     sprint_done: int = 0
-    recent_cycles: list[dict[str, str]] = field(default_factory=list)
+    recent_cycles: list[dict[str, str]] = field(
+        default_factory=lambda: list[dict[str, str]]()
+    )
     task_pending: int = 0
     task_active: int = 0
     task_done: int = 0
-    alerts: list[str] = field(default_factory=list)
+    alerts: list[str] = field(default_factory=lambda: list[str]())
 
 
 def render_dashboard(

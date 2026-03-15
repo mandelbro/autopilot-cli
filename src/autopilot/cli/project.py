@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import typer
 from rich.table import Table
@@ -188,7 +189,7 @@ def project_config(
         notification("error", f"Config file not found: {config_path}")
         raise typer.Exit(code=1)
 
-    data = _yaml.safe_load(config_path.read_text()) or {}
+    data: dict[str, Any] = _yaml.safe_load(config_path.read_text()) or {}
 
     if not key:
         console.print_json(data=data)
@@ -197,24 +198,24 @@ def project_config(
     if not value:
         # Get a key using dot notation
         parts = key.split(".")
-        current = data
+        current_val: Any = data
         for part in parts:
-            if isinstance(current, dict) and part in current:
-                current = current[part]
+            if isinstance(current_val, dict) and part in current_val:
+                current_val = cast("Any", current_val[part])
             else:
                 notification("error", f"Key '{key}' not found.")
                 raise typer.Exit(code=1)
-        console.print(f"{key} = {current}")
+        console.print(f"{key} = {current_val}")
         return
 
     # Set a key using dot notation
     parts = key.split(".")
-    current = data
+    current_dict: dict[str, Any] = data
     for part in parts[:-1]:
-        if part not in current or not isinstance(current[part], dict):
-            current[part] = {}
-        current = current[part]
-    current[parts[-1]] = value
+        if part not in current_dict or not isinstance(current_dict[part], dict):
+            current_dict[part] = {}
+        current_dict = current_dict[part]
+    current_dict[parts[-1]] = value
     config_path.write_text(_yaml.dump(data, default_flow_style=False))
     notification("success", f"Set {key} = {value}")
 

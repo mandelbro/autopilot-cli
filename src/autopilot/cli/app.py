@@ -6,7 +6,15 @@ with no arguments, enters the REPL (Phase 2).
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import typer
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from autopilot.core.config import AutopilotConfig
+    from autopilot.orchestration.scheduler import Scheduler
 
 from autopilot import __version__
 from autopilot.cli.completions import complete_project_names, complete_project_types
@@ -106,7 +114,7 @@ def init(
     run_init(name=name, project_type=project_type, root=root)
 
 
-def _resolve_project(project: str = "") -> tuple:
+def _resolve_project(project: str = "") -> tuple[Path, str]:
     """Resolve autopilot dir and project name. Returns (ap_dir, project_name).
 
     Raises typer.Exit(1) if no .autopilot directory is found.
@@ -122,7 +130,7 @@ def _resolve_project(project: str = "") -> tuple:
     return ap_dir, project_name
 
 
-def _build_scheduler(ap_dir, project_name: str):
+def _build_scheduler(ap_dir: Path, project_name: str) -> tuple[AutopilotConfig, Scheduler]:
     """Build Scheduler with all dependencies from an autopilot directory.
 
     Returns (config, scheduler).
@@ -231,7 +239,7 @@ def watch(
     """Watch mode with live dashboard."""
     from autopilot.cli.display import ProjectState, console, render_dashboard
 
-    ap_dir, project_name = _resolve_project(project)
+    _ap_dir, project_name = _resolve_project(project)
     state = ProjectState(name=project_name, status="watching")
     output = render_dashboard(state)
     console.print(output)

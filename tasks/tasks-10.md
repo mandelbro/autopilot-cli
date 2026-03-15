@@ -71,7 +71,7 @@
 
 - **Title**: Upgrade Pyright to strict mode and fix type errors
 - **File**: pyproject.toml, src/autopilot/**/*.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a developer, I want strict type checking enforced across the codebase, so that type-related bugs are caught at development time and the codebase maintains a high standard of type safety per `python-dev-standards.md`.
@@ -185,7 +185,7 @@
 
 - **Title**: Evaluate pydantic-settings for environment variable config
 - **File**: docs/development-standards/adr-pydantic-settings.md, src/autopilot/core/config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a system operator, I want API keys and secrets loaded from environment variables automatically, so that I do not need to hardcode sensitive values in YAML config files and the tool follows 12-factor app principles.

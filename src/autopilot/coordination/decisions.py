@@ -11,7 +11,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from autopilot.coordination.utils import file_lock, write_atomic
 
@@ -34,7 +34,7 @@ class Decision:
     agent: str
     action: str
     rationale: str = ""
-    context: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=lambda: dict[str, Any]())
     outcome: str = ""
 
 
@@ -173,13 +173,13 @@ class DecisionLog:
 
     @staticmethod
     def _dict_to_decision(d: dict[str, str]) -> Decision:
-        context: dict[str, Any] = {}
+        context: dict[str, Any] = dict[str, Any]()
         raw_context = d.get("context", "")
         if raw_context:
             try:
-                parsed = json.loads(raw_context)
+                parsed: object = json.loads(raw_context)
                 if isinstance(parsed, dict):
-                    context = parsed
+                    context = cast("dict[str, Any]", parsed)
             except json.JSONDecodeError:
                 pass
         return Decision(

@@ -99,7 +99,7 @@ class FailureClassifier:
         custom_patterns: Extra pattern name -> regex mapping from config.
     """
 
-    custom_patterns: dict[str, str] = field(default_factory=dict)
+    custom_patterns: dict[str, str] = field(default_factory=lambda: dict[str, str]())
 
     def classify(self, error_output: str) -> FailureClassification:
         """Classify error output against known failure patterns.

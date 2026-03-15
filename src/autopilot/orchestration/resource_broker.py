@@ -38,8 +38,8 @@ class ResourceStatus:
     max_daemons: int
     active_agents: int
     max_agents: int
-    daemon_projects: list[str] = field(default_factory=list)
-    agent_breakdown: dict[str, int] = field(default_factory=dict)
+    daemon_projects: list[str] = field(default_factory=lambda: list[str]())
+    agent_breakdown: dict[str, int] = field(default_factory=lambda: dict[str, int]())
 
 
 class ResourceBroker:

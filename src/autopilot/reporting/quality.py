@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import sqlite3
+
     from autopilot.utils.db import Database
 
 _log = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ class TrendReport:
     total_violations: int
     average_density: float
     trend_direction: str  # "improving", "degrading", "stable"
-    points: list[TrendPoint] = field(default_factory=list)
+    points: list[TrendPoint] = field(default_factory=list[TrendPoint])
 
 
 @dataclass(frozen=True)
@@ -59,7 +61,7 @@ class CrossProjectSummary:
     total_sessions: int
     average_velocity: float
     average_quality: float
-    projects: list[ProjectSummary] = field(default_factory=list)
+    projects: list[ProjectSummary] = field(default_factory=list[ProjectSummary])
 
 
 @dataclass(frozen=True)
@@ -384,7 +386,7 @@ class QualityReporter:
             return "degrading"
         return "stable"
 
-    def _project_summary(self, conn, project_id: str) -> ProjectSummary:  # noqa: ANN001
+    def _project_summary(self, conn: sqlite3.Connection, project_id: str) -> ProjectSummary:
         """Build a ProjectSummary for one project from the open *conn*."""
         # Cycle counts
         cycle_row = conn.execute(
