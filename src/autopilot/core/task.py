@@ -28,8 +28,8 @@ class Task:
     user_story: str = ""
     outcome: str = ""
     prompt: str = ""
-    acceptance_criteria: list[str] = field(default_factory=list)
-    spec_references: list[str] = field(default_factory=list)
+    acceptance_criteria: list[str] = field(default_factory=lambda: list[str]())
+    spec_references: list[str] = field(default_factory=lambda: list[str]())
     uat_status: str = ""
 
     # frozen=True + list defaults require hash=False override
@@ -57,7 +57,7 @@ class TaskIndex:
     complete: int = 0
     total_points: int = 0
     points_complete: int = 0
-    file_index: list[TaskFileEntry] = field(default_factory=list)
+    file_index: list[TaskFileEntry] = field(default_factory=lambda: list[TaskFileEntry]())
 
     def __hash__(self) -> int:  # pragma: no cover
         return id(self)
@@ -328,7 +328,7 @@ def update_task_status(task_dir: Path, task_id: str, complete: bool) -> None:
         raise FileNotFoundError(msg)
 
     index = parser.parse_task_index(index_path)
-    normalized = TaskParser._normalize_id(task_id)
+    normalized = TaskParser._normalize_id(task_id)  # pyright: ignore[reportPrivateUsage]
 
     # Locate the task and its file
     target_file: Path | None = None
@@ -339,7 +339,7 @@ def update_task_status(task_dir: Path, task_id: str, complete: bool) -> None:
             continue
         tasks = parser.parse_task_file(file_path)
         for task in tasks:
-            if TaskParser._normalize_id(task.id) == normalized:
+            if TaskParser._normalize_id(task.id) == normalized:  # pyright: ignore[reportPrivateUsage]
                 target_file = file_path
                 found_task = task
                 break
@@ -365,7 +365,7 @@ def update_task_status(task_dir: Path, task_id: str, complete: bool) -> None:
 def _update_task_file(path: Path, task_id: str, complete: bool) -> None:
     """Rewrite the task file toggling the Complete checkbox for *task_id*."""
     text = path.read_text(encoding="utf-8")
-    normalized = TaskParser._normalize_id(task_id)
+    normalized = TaskParser._normalize_id(task_id)  # pyright: ignore[reportPrivateUsage]
     lines = text.split("\n")
     result: list[str] = []
     in_target_task = False
@@ -374,7 +374,7 @@ def _update_task_file(path: Path, task_id: str, complete: bool) -> None:
         m = _TASK_HEADER_RE.match(line)
         if m:
             tid = m.group(1).strip()
-            in_target_task = TaskParser._normalize_id(tid) == normalized
+            in_target_task = TaskParser._normalize_id(tid) == normalized  # pyright: ignore[reportPrivateUsage]
 
         if in_target_task and _COMPLETE_RE.match(line):
             mark = "x" if complete else " "

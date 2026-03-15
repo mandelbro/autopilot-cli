@@ -63,8 +63,8 @@ class UATResult:
     passed: int = 0
     failed: int = 0
     skipped: int = 0
-    categories: list[CategoryBreakdown] = field(default_factory=list)
-    failures: list[TestFailure] = field(default_factory=list)
+    categories: list[CategoryBreakdown] = field(default_factory=list[CategoryBreakdown])
+    failures: list[TestFailure] = field(default_factory=list[TestFailure])
     raw_output: str = ""
 
 

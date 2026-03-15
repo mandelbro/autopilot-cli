@@ -77,14 +77,22 @@ class HookRunner:
             {"hook_point": "post_dispatch", "command": "echo {agent} done"},
         ]
         """
-        hooks = []
+        hooks: list[HookConfig] = []
         for h in hooks_config:
+            hook_point: str = str(h.get("hook_point", ""))
+            command: str = str(h.get("command", ""))
+            timeout_val = h.get("timeout", _DEFAULT_TIMEOUT)
+            timeout: int = (
+                int(timeout_val) if isinstance(timeout_val, (int, float)) else _DEFAULT_TIMEOUT
+            )
+            abort_val = h.get("abort_on_failure", False)
+            abort_on_failure: bool = bool(abort_val)
             hooks.append(
                 HookConfig(
-                    hook_point=h.get("hook_point", ""),
-                    command=h.get("command", ""),
-                    timeout=h.get("timeout", _DEFAULT_TIMEOUT),
-                    abort_on_failure=h.get("abort_on_failure", False),
+                    hook_point=hook_point,
+                    command=command,
+                    timeout=timeout,
+                    abort_on_failure=abort_on_failure,
                 )
             )
         return cls(hooks)

@@ -11,6 +11,7 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
     "pydantic>=2.10",
+    "pydantic-settings>=2.2",
     "pyyaml>=6.0",
     "structlog>=24.0",
     "typer>=0.15",
@@ -57,7 +58,8 @@ skip-magic-trailing-comma = false
 pythonVersion = "3.12"
 venvPath = "."
 venv = ".venv"
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
+reportUnusedFunction = false
 include = ["src"]
 exclude = ["tests"]
 

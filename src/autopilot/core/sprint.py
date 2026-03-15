@@ -41,7 +41,7 @@ class Sprint:
     id: str
     start_date: datetime
     end_date: datetime
-    tasks: list[str] = field(default_factory=list)
+    tasks: list[str] = field(default_factory=lambda: list[str]())
     capacity: int = 0
     points_planned: int = 0
     status: str = "planned"

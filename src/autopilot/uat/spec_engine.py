@@ -35,12 +35,12 @@ class TraceabilityMatrix:
     """Maps a task to its specification references with coverage scoring."""
 
     task_id: str
-    rfc_sections: list[str] = field(default_factory=list)
-    discovery_requirements: list[str] = field(default_factory=list)
-    ux_elements: list[str] = field(default_factory=list)
+    rfc_sections: list[str] = field(default_factory=list[str])
+    discovery_requirements: list[str] = field(default_factory=list[str])
+    ux_elements: list[str] = field(default_factory=list[str])
     coverage_score: float = 0.0
-    unmapped_specs: list[str] = field(default_factory=list)
-    unmapped_tasks: list[str] = field(default_factory=list)
+    unmapped_specs: list[str] = field(default_factory=list[str])
+    unmapped_tasks: list[str] = field(default_factory=list[str])
 
     def __hash__(self) -> int:  # pragma: no cover
         return hash(self.task_id)

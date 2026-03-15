@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 
 # -- Enums --
 
@@ -105,32 +105,34 @@ class DispatchPlan:
     @classmethod
     def from_json(cls, raw: str) -> DispatchPlan:
         try:
-            data = json.loads(raw)
+            parsed = json.loads(raw)
         except json.JSONDecodeError as exc:
             msg = f"Invalid JSON in dispatch plan: {exc}"
             raise ValueError(msg) from exc
 
-        if not isinstance(data, dict):
-            msg = f"Dispatch plan JSON must be a mapping, got {type(data).__name__}"
+        if not isinstance(parsed, dict):
+            msg = f"Dispatch plan JSON must be a mapping, got {type(parsed).__name__}"
             raise ValueError(msg)
 
+        data = cast("dict[str, Any]", parsed)
         dispatches: list[Dispatch] = []
-        for i, d in enumerate(data.get("dispatches", [])):
-            if not isinstance(d, dict):
-                msg = f"Dispatch entry {i} must be a mapping, got {type(d).__name__}"
+        for i, raw_d in enumerate(data.get("dispatches", [])):
+            if not isinstance(raw_d, dict):
+                msg = f"Dispatch entry {i} must be a mapping, got {type(raw_d).__name__}"
                 raise ValueError(msg)
+            d = cast("dict[str, Any]", raw_d)
             if "agent" not in d or "action" not in d:
                 msg = f"Dispatch entry {i} missing required 'agent' and/or 'action' fields: {d!r}"
                 raise ValueError(msg)
             dispatches.append(
                 Dispatch(
-                    agent=d["agent"],
-                    action=d["action"],
-                    project_name=d.get("project_name", ""),
-                    task_id=d.get("task_id", ""),
+                    agent=str(d["agent"]),
+                    action=str(d["action"]),
+                    project_name=str(d.get("project_name", "")),
+                    task_id=str(d.get("task_id", "")),
                 )
             )
-        return cls(dispatches=tuple(dispatches), summary=data.get("summary", ""))
+        return cls(dispatches=tuple(dispatches), summary=str(data.get("summary", "")))
 
 
 @dataclass(frozen=True)
@@ -172,7 +174,7 @@ class Session:
     agent_name: str | None = None
     cycle_id: str | None = None
     log_file: str = ""
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=lambda: dict[str, Any]())
 
     def to_json(self) -> str:
         return json.dumps(
@@ -194,15 +196,16 @@ class Session:
     @classmethod
     def from_json(cls, raw: str) -> Session:
         try:
-            data = json.loads(raw)
+            parsed = json.loads(raw)
         except json.JSONDecodeError as exc:
             msg = f"Invalid JSON in session data: {exc}"
             raise ValueError(msg) from exc
 
-        if not isinstance(data, dict):
-            msg = f"Session JSON must be a mapping, got {type(data).__name__}"
+        if not isinstance(parsed, dict):
+            msg = f"Session JSON must be a mapping, got {type(parsed).__name__}"
             raise ValueError(msg)
 
+        data = cast("dict[str, Any]", parsed)
         required = ("id", "project", "type", "status", "started_at")
         missing = [k for k in required if k not in data]
         if missing:
@@ -210,20 +213,22 @@ class Session:
             raise ValueError(msg)
 
         try:
+            ended_at_raw = data.get("ended_at")
+            metadata_raw = data.get("metadata", {})
             return cls(
-                id=data["id"],
-                project=data["project"],
-                type=SessionType(data["type"]),
-                status=SessionStatus(data["status"]),
-                pid=data.get("pid"),
-                started_at=datetime.fromisoformat(data["started_at"]),
-                ended_at=(
-                    datetime.fromisoformat(data["ended_at"]) if data.get("ended_at") else None
-                ),
-                agent_name=data.get("agent_name"),
-                cycle_id=data.get("cycle_id"),
-                log_file=data.get("log_file", ""),
-                metadata=data.get("metadata", {}),
+                id=str(data["id"]),
+                project=str(data["project"]),
+                type=SessionType(str(data["type"])),
+                status=SessionStatus(str(data["status"])),
+                pid=int(data["pid"]) if data.get("pid") is not None else None,
+                started_at=datetime.fromisoformat(str(data["started_at"])),
+                ended_at=(datetime.fromisoformat(str(ended_at_raw)) if ended_at_raw else None),
+                agent_name=str(data["agent_name"]) if data.get("agent_name") is not None else None,
+                cycle_id=str(data["cycle_id"]) if data.get("cycle_id") is not None else None,
+                log_file=str(data.get("log_file", "")),
+                metadata=cast("dict[str, Any]", metadata_raw)
+                if isinstance(metadata_raw, dict)
+                else {},
             )
         except (ValueError, TypeError) as exc:
             msg = f"Invalid session data (id={data.get('id', '?')}): {exc}"
@@ -309,7 +314,7 @@ class EnforcementReport:
 
     project_id: str
     collected_at: datetime = field(default_factory=_utc_now)
-    results: list[CheckResult] = field(default_factory=list)
+    results: list[CheckResult] = field(default_factory=lambda: list[CheckResult]())
 
     @property
     def total_violations(self) -> int:

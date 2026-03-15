@@ -30,10 +30,10 @@ class MigrationResult:
     success: bool
     source_dir: Path
     target_dir: Path
-    files_copied: list[str] = field(default_factory=list)
+    files_copied: list[str] = field(default_factory=lambda: list[str]())
     config_mapped: bool = False
     state_converted: bool = False
-    errors: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=lambda: list[str]())
 
 
 class MigrationEngine:
@@ -201,7 +201,7 @@ class MigrationEngine:
                 if not state_file.exists():
                     continue
                 text = state_file.read_text()
-                data = json.loads(text) if text.strip() else {}
+                data: Any = json.loads(text) if text.strip() else {}
 
                 # Store raw JSON data in a migration_state table
                 conn = db.get_connection()

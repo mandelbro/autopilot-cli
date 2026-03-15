@@ -5,7 +5,7 @@ Three-level hierarchy: global defaults (~/.autopilot/config.yaml)
 """
 
 from pathlib import Path
-from typing import Literal, Self
+from typing import Any, Literal, Self, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -127,7 +127,7 @@ class MonitoredServiceConfig(BaseModel):
 
     id: str = ""
     name: str = ""
-    health_endpoints: list[str] = Field(default_factory=list)
+    health_endpoints: list[str] = Field(default_factory=lambda: list[str]())
     staging_url: str = ""
 
 
@@ -231,7 +231,7 @@ class AutopilotConfig(BaseModel):
         return cls.model_validate(merged)
 
 
-def _load_yaml_dict(path: Path, label: str) -> dict:
+def _load_yaml_dict(path: Path, label: str) -> dict[str, Any]:
     """Load a YAML file and validate it contains a mapping."""
     if not path.exists():
         return {}
@@ -248,15 +248,17 @@ def _load_yaml_dict(path: Path, label: str) -> dict:
             f"{label.capitalize()} ({path}) must contain a YAML mapping, got {type(data).__name__}"
         )
         raise ValueError(msg)
-    return data
+    return cast("dict[str, Any]", data)
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge override into base, with override winning."""
-    result = base.copy()
+    result: dict[str, Any] = base.copy()
     for key, value in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge(result[key], value)
+            result[key] = _deep_merge(
+                cast("dict[str, Any]", result[key]), cast("dict[str, Any]", value)
+            )
         else:
             result[key] = value
     return result

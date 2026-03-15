@@ -42,7 +42,7 @@ class VelocityTrend:
     average: float
     trend_direction: str  # "up", "down", "stable"
     confidence: float
-    recent_velocities: list[int] = field(default_factory=list)
+    recent_velocities: list[int] = field(default_factory=list[int])
 
 
 @dataclass(frozen=True)

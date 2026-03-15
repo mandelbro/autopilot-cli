@@ -38,7 +38,7 @@ class Phase:
     """A single phase extracted from a discovery document."""
 
     name: str
-    deliverables: list[str] = field(default_factory=list)
+    deliverables: list[str] = field(default_factory=lambda: list[str]())
     effort_estimate: str = ""
 
     def __hash__(self) -> int:  # pragma: no cover
@@ -51,7 +51,7 @@ class DiscoveryDocument:
 
     title: str
     description: str = ""
-    phases: list[Phase] = field(default_factory=list)
+    phases: list[Phase] = field(default_factory=lambda: list[Phase]())
 
     def __hash__(self) -> int:  # pragma: no cover
         return hash(self.title)
@@ -396,7 +396,7 @@ class TaskFileWriter:
         existing_entries_text = ""
         if merge and existing_index_path and existing_index_path.exists():
             text = existing_index_path.read_text(encoding="utf-8")
-            entry_lines = []
+            entry_lines: list[str] = []
             for line in text.split("\n"):
                 if line.strip().startswith("- `tasks/tasks-"):
                     entry_lines.append(line)
@@ -404,7 +404,7 @@ class TaskFileWriter:
             if existing_entries_text:
                 existing_entries_text += "\n"
 
-        new_entries = []
+        new_entries: list[str] = []
         for fname, start_id, end_id, count, pts in file_entries:
             new_entries.append(
                 f"- `tasks/{fname}`: Contains Tasks {start_id} - {end_id}"
@@ -548,7 +548,7 @@ class DiscoveryConverter:
 
         start_id = 1
         if merge:
-            existing_count, _, _ = TaskFileWriter._read_existing_counts(output_dir)
+            existing_count, _, _ = TaskFileWriter._read_existing_counts(output_dir)  # pyright: ignore[reportPrivateUsage]
             start_id = existing_count + 1
 
         tasks = self.generate_tasks(
