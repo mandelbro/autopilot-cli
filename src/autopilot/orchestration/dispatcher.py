@@ -189,7 +189,9 @@ def _parse_json_to_plan(json_str: str) -> DispatchPlan:
                 if not isinstance(item, dict):
                     msg = f"Dispatch entry {i} must be a mapping, got {type(item).__name__}"
                     raise DispatchParseError(msg)
-                dispatches.append(_normalize_and_create_dispatch(cast("dict[str, object]", item), i))
+                dispatches.append(
+                    _normalize_and_create_dispatch(cast("dict[str, object]", item), i)
+                )
             raw_summary = data_dict.get("summary", "")
             summary = str(raw_summary) if raw_summary else ""
         else:

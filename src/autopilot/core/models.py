@@ -222,13 +222,13 @@ class Session:
                 status=SessionStatus(str(data["status"])),
                 pid=int(data["pid"]) if data.get("pid") is not None else None,
                 started_at=datetime.fromisoformat(str(data["started_at"])),
-                ended_at=(
-                    datetime.fromisoformat(str(ended_at_raw)) if ended_at_raw else None
-                ),
+                ended_at=(datetime.fromisoformat(str(ended_at_raw)) if ended_at_raw else None),
                 agent_name=str(data["agent_name"]) if data.get("agent_name") is not None else None,
                 cycle_id=str(data["cycle_id"]) if data.get("cycle_id") is not None else None,
                 log_file=str(data.get("log_file", "")),
-                metadata=cast("dict[str, Any]", metadata_raw) if isinstance(metadata_raw, dict) else {},
+                metadata=cast("dict[str, Any]", metadata_raw)
+                if isinstance(metadata_raw, dict)
+                else {},
             )
         except (ValueError, TypeError) as exc:
             msg = f"Invalid session data (id={data.get('id', '?')}): {exc}"

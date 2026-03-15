@@ -82,7 +82,9 @@ class HookRunner:
             hook_point: str = str(h.get("hook_point", ""))
             command: str = str(h.get("command", ""))
             timeout_val = h.get("timeout", _DEFAULT_TIMEOUT)
-            timeout: int = int(timeout_val) if isinstance(timeout_val, (int, float)) else _DEFAULT_TIMEOUT
+            timeout: int = (
+                int(timeout_val) if isinstance(timeout_val, (int, float)) else _DEFAULT_TIMEOUT
+            )
             abort_val = h.get("abort_on_failure", False)
             abort_on_failure: bool = bool(abort_val)
             hooks.append(
