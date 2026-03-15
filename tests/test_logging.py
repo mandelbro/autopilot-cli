@@ -16,7 +16,9 @@ from autopilot.logging import configure_logging
 class TestConfigureLogging:
     """Tests for the configure_logging function."""
 
-    def test_configures_structlog_with_json_renderer(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_configures_structlog_with_json_renderer(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Verify structlog is configured with JSON rendering."""
         configure_logging()
         logger = structlog.get_logger()
