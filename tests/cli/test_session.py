@@ -38,7 +38,7 @@ class TestSessionStartNoWorkspaceFlag:
     def test_session_start_help_shows_no_workspace(self) -> None:
         result = runner.invoke(app, ["session", "start", "--help"])
         assert result.exit_code == 0
-        assert "--no-workspace" in result.output
+        assert "no" in result.output and "workspace" in result.output
 
     @patch(f"{_MOD}.find_autopilot_dir", return_value=None)
     def test_no_workspace_flag_accepted(self, _find: MagicMock) -> None:

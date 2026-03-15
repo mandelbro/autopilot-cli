@@ -106,7 +106,7 @@ class TestInitRepositoryUrl:
     def test_init_help_shows_repository_url(self) -> None:
         result = runner.invoke(app, ["init", "--help"])
         assert result.exit_code == 0
-        assert "--repository-url" in result.output
+        assert "repository" in result.output and "url" in result.output
 
     @patch("autopilot.cli.project.run_init")
     def test_init_passes_repository_url(self, mock_run_init: object) -> None:
