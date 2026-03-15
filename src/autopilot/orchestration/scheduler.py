@@ -136,8 +136,16 @@ class Scheduler:
             # Phase 3: Bookkeeping (always runs, lock always released)
             try:
                 result = self._phase_bookkeep(ctx)
-            finally:
+            except Exception:
                 self._lock.release()
+                # Clean up workspace on bookkeeping failure if possible
+                if workspace_info is not None and self._workspace_manager is not None:
+                    try:
+                        self._workspace_manager.cleanup(workspace_info.id)
+                    except Exception:
+                        _log.exception("workspace_cleanup_after_bookkeep_failure")
+                raise
+            self._lock.release()
 
             # Workspace cleanup (after lock release)
             if workspace_info is not None and self._workspace_manager is not None:
