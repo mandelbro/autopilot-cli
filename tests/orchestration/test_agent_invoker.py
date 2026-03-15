@@ -217,13 +217,9 @@ class TestValidateCwd:
 
 
 class TestCwdPropagation:
-    def test_cwd_flows_to_run_claude_cli(
-        self, invoker: AgentInvoker, tmp_path: Path
-    ) -> None:
+    def test_cwd_flows_to_run_claude_cli(self, invoker: AgentInvoker, tmp_path: Path) -> None:
         (tmp_path / ".git").mkdir()
-        completed = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="output", stderr=""
-        )
+        completed = subprocess.CompletedProcess(args=[], returncode=0, stdout="output", stderr="")
         with patch(
             "autopilot.orchestration.agent_invoker.run_claude_cli",
             return_value=completed,
@@ -234,13 +230,9 @@ class TestCwdPropagation:
         _, kwargs = mock_cli.call_args
         assert kwargs["cwd"] == tmp_path
 
-    def test_cwd_validation_logs_warnings(
-        self, invoker: AgentInvoker, tmp_path: Path
-    ) -> None:
+    def test_cwd_validation_logs_warnings(self, invoker: AgentInvoker, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent"
-        completed = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="output", stderr=""
-        )
+        completed = subprocess.CompletedProcess(args=[], returncode=0, stdout="output", stderr="")
         with (
             patch(
                 "autopilot.orchestration.agent_invoker.run_claude_cli",
@@ -255,13 +247,9 @@ class TestCwdPropagation:
             f"Directory does not exist: {missing}",
         )
 
-    def test_cwd_validation_does_not_block(
-        self, invoker: AgentInvoker, tmp_path: Path
-    ) -> None:
+    def test_cwd_validation_does_not_block(self, invoker: AgentInvoker, tmp_path: Path) -> None:
         missing = tmp_path / "nonexistent"
-        completed = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="output", stderr=""
-        )
+        completed = subprocess.CompletedProcess(args=[], returncode=0, stdout="output", stderr="")
         with (
             patch(
                 "autopilot.orchestration.agent_invoker.run_claude_cli",

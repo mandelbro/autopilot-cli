@@ -166,9 +166,7 @@ class WorkspaceManager:
             return None
         return self._dict_to_info(entry)
 
-    def detect_stale(
-        self, get_session_status: SessionStatusLookup
-    ) -> list[WorkspaceInfo]:
+    def detect_stale(self, get_session_status: SessionStatusLookup) -> list[WorkspaceInfo]:
         """Detect workspaces whose sessions have ended, failed, or been deleted.
 
         Also scans the filesystem for orphaned directories not tracked in the manifest.
@@ -188,9 +186,7 @@ class WorkspaceManager:
 
         # Scan for orphaned directories not in the manifest
         if self._base_dir.is_dir():
-            tracked_dirs = {
-                Path(e["workspace_dir"]).resolve() for e in manifest.values()
-            }
+            tracked_dirs = {Path(e["workspace_dir"]).resolve() for e in manifest.values()}
             for child in self._base_dir.iterdir():
                 if not child.is_dir():
                     continue
@@ -242,9 +238,7 @@ class WorkspaceManager:
             total += size
         return {"total_bytes": total, "workspaces": per_workspace}
 
-    def cleanup_stale(
-        self, get_session_status: SessionStatusLookup
-    ) -> list[str]:
+    def cleanup_stale(self, get_session_status: SessionStatusLookup) -> list[str]:
         """Detect and clean up all stale workspaces.
 
         Removes stale workspace directories and prunes manifest entries
