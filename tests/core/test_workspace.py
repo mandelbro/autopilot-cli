@@ -373,6 +373,24 @@ class TestDetectStale:
         manifest_stale = [s for s in stale if not s.id.startswith("orphan-")]
         assert manifest_stale == []
 
+    def test_detects_orphaned_filesystem_directory(
+        self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
+    ) -> None:
+        config, registry, base_dir = workspace_setup
+        mgr = WorkspaceManager(config, registry)
+        # Create a workspace so the base_dir exists
+        mgr.create("test-project", "session-12345678")
+
+        # Manually create an orphaned workspace directory (not tracked in manifest)
+        orphan_dir = base_dir / "orphan-workspace"
+        orphan_dir.mkdir(parents=True)
+        (orphan_dir / ".git").mkdir()
+
+        stale = mgr.detect_stale(_status_lookup(SessionStatus.RUNNING))
+        orphans = [s for s in stale if s.id.startswith("orphan-")]
+        assert len(orphans) == 1
+        assert orphans[0].workspace_dir == orphan_dir
+
     def test_empty_manifest_returns_empty(
         self, workspace_setup: tuple[WorkspaceConfig, ProjectRegistry, Path]
     ) -> None:

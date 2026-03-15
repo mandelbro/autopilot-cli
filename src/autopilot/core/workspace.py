@@ -193,7 +193,7 @@ class WorkspaceManager:
                 # Skip manifest/lock files and non-workspace directories
                 if child.resolve() in tracked_dirs:
                     continue
-                if child.name.startswith(".") or child.suffix in (".json", ".lock"):
+                if child.name.startswith("."):
                     continue
                 # Check if it looks like a workspace (has .git)
                 if (child / ".git").exists():
@@ -263,7 +263,7 @@ class WorkspaceManager:
                     self.cleanup(wid)
                     _log.info("Cleaned stale workspace: %s", wid)
                     cleaned.append(wid)
-                except WorkspaceError:
+                except (WorkspaceError, OSError):
                     _log.warning("Failed to clean workspace %s, pruning manifest", wid)
                     cleaned.append(wid)
 
