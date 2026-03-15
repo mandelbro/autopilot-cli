@@ -34,11 +34,11 @@ class TraceabilityEntry:
     spec_document: str
     spec_section: str
     requirement_text: str
-    implementing_tasks: list[str] = field(default_factory=list)
+    implementing_tasks: list[str] = field(default_factory=list[str])
     uat_status: str = "untested"
     uat_score: float = 0.0
     last_tested: str = ""
-    test_files: list[str] = field(default_factory=list)
+    test_files: list[str] = field(default_factory=list[str])
     notes: str = ""
 
 
@@ -46,7 +46,7 @@ class TraceabilityEntry:
 class TraceabilityMatrix:
     """Full traceability matrix containing all requirement entries."""
 
-    entries: list[TraceabilityEntry] = field(default_factory=list)
+    entries: list[TraceabilityEntry] = field(default_factory=list[TraceabilityEntry])
     generated_at: str = ""
 
     @property

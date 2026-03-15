@@ -37,7 +37,7 @@ class GeneratedTestFile:
 
     file_path: str
     test_count: int
-    test_names: list[str] = field(default_factory=list)
+    test_names: list[str] = field(default_factory=list[str])
     source_code: str = ""
 
 

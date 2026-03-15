@@ -55,7 +55,7 @@ class CycleContext:
     cycle_id: str
     project_id: str
     started_at: datetime
-    outcomes: list[DispatchOutcome] = field(default_factory=list)
+    outcomes: list[DispatchOutcome] = field(default_factory=lambda: list[DispatchOutcome]())
 
 
 class SchedulerError(Exception):

@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from autopilot.core.models import CheckResult, Violation, ViolationSeverity
 
@@ -89,19 +89,25 @@ def _parse_ruff_json(
     if not raw.strip():
         return []
     try:
-        entries = json.loads(raw)
+        entries: object = json.loads(raw)
     except json.JSONDecodeError:
         return []
 
+    if not isinstance(entries, list):
+        return []
+
     violations: list[Violation] = []
-    for entry in entries:
-        if not isinstance(entry, dict):
+    for entry_raw in cast("list[object]", entries):
+        if not isinstance(entry_raw, dict):
             continue
-        code = entry.get("code", "")
-        message = entry.get("message", "")
-        filename = entry.get("filename", "")
-        location = entry.get("location", {})
-        line = location.get("row", 0) if isinstance(location, dict) else 0
+        entry = cast("dict[str, object]", entry_raw)
+        code = str(entry.get("code", ""))
+        message = str(entry.get("message", ""))
+        filename = str(entry.get("filename", ""))
+        raw_location = entry.get("location", {})
+        location = cast("dict[str, object]", raw_location) if isinstance(raw_location, dict) else {}
+        line_val = location.get("row", 0)
+        line = int(line_val) if isinstance(line_val, (int, float)) else 0
 
         violations.append(
             Violation(

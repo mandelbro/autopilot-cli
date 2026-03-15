@@ -13,6 +13,7 @@ import typer
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from autopilot.core.models import Violation
     from autopilot.enforcement.engine import EnforcementEngine
 
 
@@ -91,7 +92,7 @@ def register_enforce_commands(app: typer.Typer) -> None:
         results = engine.check(project_root)
 
         # Flatten violations, optionally filtering by category.
-        all_violations = []
+        all_violations: list[Violation] = []
         for r in results:
             if category and r.category != category:
                 continue

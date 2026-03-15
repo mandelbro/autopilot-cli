@@ -6,7 +6,7 @@ categories for sub-100ms editor feedback.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -70,17 +70,14 @@ def apply_to_pyproject(pyproject_path: Path, config: dict[str, Any]) -> None:
     The merge is additive — existing keys not present in *config* are
     preserved.  If the file does not exist, it is created.
     """
-    try:
-        import tomllib
-    except ModuleNotFoundError:
-        import tomli as tomllib  # type: ignore[no-redef]
+    import tomllib
 
     existing: dict[str, Any] = {}
     if pyproject_path.exists():
         with open(pyproject_path, "rb") as f:
             existing = tomllib.load(f)
 
-    tool = existing.setdefault("tool", {})
+    tool: dict[str, Any] = existing.setdefault("tool", {})
     _deep_merge_into(tool, config)
 
     # Write back as TOML
@@ -89,7 +86,7 @@ def apply_to_pyproject(pyproject_path: Path, config: dict[str, Any]) -> None:
 
         pyproject_path.parent.mkdir(parents=True, exist_ok=True)
         with open(pyproject_path, "wb") as f:
-            tomli_w.dump(existing, f)
+            tomli_w.dump(existing, f)  # type: ignore[no-untyped-call]
     except ModuleNotFoundError:
         _write_toml_fallback(pyproject_path, existing)
 
@@ -97,8 +94,9 @@ def apply_to_pyproject(pyproject_path: Path, config: dict[str, Any]) -> None:
 def _deep_merge_into(base: dict[str, Any], overlay: dict[str, Any]) -> None:
     """Recursively merge *overlay* into *base*, mutating base in place."""
     for key, value in overlay.items():
-        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
-            _deep_merge_into(base[key], value)
+        base_val = base.get(key)
+        if base_val is not None and isinstance(base_val, dict) and isinstance(value, dict):
+            _deep_merge_into(cast("dict[str, Any]", base_val), cast("dict[str, Any]", value))
         else:
             base[key] = value
 

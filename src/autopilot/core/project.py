@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -44,8 +44,8 @@ class ProjectInitResult:
     project_name: str
     project_root: Path
     autopilot_dir: Path
-    files_created: list[str] = field(default_factory=list)
-    next_steps: list[str] = field(default_factory=list)
+    files_created: list[str] = field(default_factory=lambda: list[str]())
+    next_steps: list[str] = field(default_factory=lambda: list[str]())
 
 
 @dataclass
@@ -184,7 +184,7 @@ class ProjectRegistry:
             _log.warning("Corrupt projects.yaml, returning empty list")
             return []
         if isinstance(data, list):
-            return data
+            return cast("list[dict[str, Any]]", data)
         return []
 
     def _write_raw(self, data: list[dict[str, Any]]) -> None:
@@ -321,13 +321,13 @@ def _register_global(*, name: str, path: str, project_type: str) -> None:
         registry.register(name, path, project_type)
     else:
         # Update existing entry via raw rewrite (idempotent)
-        raw = registry._read_raw()
+        raw = registry._read_raw()  # pyright: ignore[reportPrivateUsage]
         for p in raw:
             if p.get("name") == name:
                 p["path"] = path
                 p["type"] = project_type
                 break
-        registry._write_raw(raw)
+        registry._write_raw(raw)  # pyright: ignore[reportPrivateUsage]
 
 
 def _register_sqlite(*, name: str, path: str, project_type: str) -> None:

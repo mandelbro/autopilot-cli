@@ -44,7 +44,7 @@ class BatchProgress:
 class BatchResult:
     """Aggregated result from a batch UAT run."""
 
-    results: list[tuple[str, UATResult]] = field(default_factory=list)
+    results: list[tuple[str, UATResult]] = field(default_factory=list[tuple[str, UATResult]])
     total_tasks: int = 0
     tasks_passed: int = 0
     tasks_failed: int = 0
@@ -87,7 +87,7 @@ class BatchUAT:
 
         start_num = int(start_id.lstrip("0") or "0")
         end_num = int(end_id.lstrip("0") or "0")
-        filtered = []
+        filtered: list[str] = []
         for tid in all_ids:
             try:
                 num = int(tid.lstrip("0") or "0")

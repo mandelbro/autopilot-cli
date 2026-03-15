@@ -30,7 +30,7 @@ def configure_logging(level: str = "INFO") -> None:
     if upper_level not in _VALID_LEVELS:
         msg = f"Invalid log level: {level!r}. Must be one of {sorted(_VALID_LEVELS)}"
         raise ValueError(msg)
-    numeric_level = logging.getLevelName(upper_level)
+    numeric_level: int = logging.getLevelNamesMapping()[upper_level]
     logging.basicConfig(level=numeric_level, format="%(message)s", force=True)
     structlog.configure(
         processors=[

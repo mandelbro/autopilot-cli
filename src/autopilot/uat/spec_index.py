@@ -64,7 +64,7 @@ class SpecEntry:
 class SpecIndex:
     """Index of all requirements extracted from a specification document."""
 
-    entries: list[SpecEntry] = field(default_factory=list)
+    entries: list[SpecEntry] = field(default_factory=list[SpecEntry])
     generated_at: str = ""
     total_requirements: int = 0
     testable_count: int = 0
