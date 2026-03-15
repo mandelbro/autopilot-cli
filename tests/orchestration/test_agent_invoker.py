@@ -1,9 +1,13 @@
-"""Tests for agent invoker with retry and model fallback (Task 031)."""
+"""Tests for agent invoker with retry and model fallback (Tasks 031, 100)."""
 
 from __future__ import annotations
 
 import subprocess
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 import pytest
 
@@ -185,6 +189,89 @@ class TestAgentInvokerConfig:
     def test_per_agent_max_turns(self, invoker: AgentInvoker) -> None:
         assert invoker._resolve_max_turns("custom-agent") == 5
         assert invoker._resolve_max_turns("unknown-agent") == 10
+
+
+class TestValidateCwd:
+    def test_valid_git_repo(self, tmp_path: Path) -> None:
+        (tmp_path / ".git").mkdir()
+        issues = AgentInvoker.validate_cwd(tmp_path)
+        assert issues == []
+
+    def test_missing_directory(self, tmp_path: Path) -> None:
+        missing = tmp_path / "nonexistent"
+        issues = AgentInvoker.validate_cwd(missing)
+        assert len(issues) == 1
+        assert "does not exist" in issues[0]
+
+    def test_not_a_directory(self, tmp_path: Path) -> None:
+        file_path = tmp_path / "afile.txt"
+        file_path.write_text("hello")
+        issues = AgentInvoker.validate_cwd(file_path)
+        assert len(issues) == 1
+        assert "not a directory" in issues[0]
+
+    def test_not_a_git_repo(self, tmp_path: Path) -> None:
+        issues = AgentInvoker.validate_cwd(tmp_path)
+        assert len(issues) == 1
+        assert "Not a git repository" in issues[0]
+
+
+class TestCwdPropagation:
+    def test_cwd_flows_to_run_claude_cli(
+        self, invoker: AgentInvoker, tmp_path: Path
+    ) -> None:
+        (tmp_path / ".git").mkdir()
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="output", stderr=""
+        )
+        with patch(
+            "autopilot.orchestration.agent_invoker.run_claude_cli",
+            return_value=completed,
+        ) as mock_cli:
+            invoker.invoke("project-leader", "test", cwd=tmp_path)
+
+        mock_cli.assert_called()
+        _, kwargs = mock_cli.call_args
+        assert kwargs["cwd"] == tmp_path
+
+    def test_cwd_validation_logs_warnings(
+        self, invoker: AgentInvoker, tmp_path: Path
+    ) -> None:
+        missing = tmp_path / "nonexistent"
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="output", stderr=""
+        )
+        with (
+            patch(
+                "autopilot.orchestration.agent_invoker.run_claude_cli",
+                return_value=completed,
+            ),
+            patch("autopilot.orchestration.agent_invoker._log") as mock_log,
+        ):
+            invoker.invoke("project-leader", "test", cwd=missing)
+
+        mock_log.warning.assert_any_call(
+            "agent_invoke_cwd_warning: %s",
+            f"Directory does not exist: {missing}",
+        )
+
+    def test_cwd_validation_does_not_block(
+        self, invoker: AgentInvoker, tmp_path: Path
+    ) -> None:
+        missing = tmp_path / "nonexistent"
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="output", stderr=""
+        )
+        with (
+            patch(
+                "autopilot.orchestration.agent_invoker.run_claude_cli",
+                return_value=completed,
+            ) as mock_cli,
+        ):
+            result = invoker.invoke("project-leader", "test", cwd=missing)
+
+        mock_cli.assert_called()
+        assert result.status == DispatchStatus.SUCCESS
 
 
 class TestEmptyOutputDetection:

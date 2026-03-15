@@ -70,6 +70,21 @@ class AgentInvoker:
         self._registry = registry
         self._config = config
 
+    @staticmethod
+    def validate_cwd(cwd: Path) -> list[str]:
+        """Validate that cwd is a suitable workspace directory.
+
+        Returns a list of issues (empty if valid).
+        """
+        issues: list[str] = []
+        if not cwd.exists():
+            issues.append(f"Directory does not exist: {cwd}")
+        elif not cwd.is_dir():
+            issues.append(f"Path is not a directory: {cwd}")
+        elif not (cwd / ".git").exists():
+            issues.append(f"Not a git repository: {cwd}")
+        return issues
+
     def invoke(
         self,
         agent_name: str,
@@ -82,6 +97,11 @@ class AgentInvoker:
         Loads the agent prompt from the registry, appends the caller-supplied
         prompt, and tries each model in the fallback chain until one succeeds.
         """
+        if cwd is not None:
+            cwd_issues = self.validate_cwd(cwd)
+            for issue in cwd_issues:
+                _log.warning("agent_invoke_cwd_warning: %s", issue)
+
         agent_prompt = self._registry.load_prompt(agent_name)
         full_prompt = f"{agent_prompt}\n\n---\n\n{prompt}"
 

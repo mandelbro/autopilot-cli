@@ -16,7 +16,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: AgentInvoker workspace cwd propagation
 - **File**: src/autopilot/orchestration/agent_invoker.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a system operator, I want agents to run in the isolated workspace directory, so that all file operations and git commands target the clone instead of my checkout.
@@ -219,7 +219,7 @@ Source: `docs/ideation/workspace-isolation-discovery.md`, `docs/ADR/ADR-011-work
 
 - **Title**: Stale workspace detection and disk usage reporting
 - **File**: src/autopilot/core/workspace.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 5
 
 - **User Story (business-facing)**: As a system operator, I want autopilot to detect orphaned workspaces from crashed sessions, so that disk space is not wasted by workspace directories that no one is using.
