@@ -6,6 +6,10 @@ default: format lint typecheck test
 init:
     uv sync --extra dev
 
+# Run the autopilot CLI (pass args after --)
+run *ARGS:
+    uv run autopilot {{ARGS}}
+
 # Run tests
 test:
     uv run pytest

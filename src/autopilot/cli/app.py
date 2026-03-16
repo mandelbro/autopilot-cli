@@ -30,6 +30,7 @@ app = typer.Typer(
     help="Autonomous development orchestrator.",
     no_args_is_help=False,
     rich_markup_mode="rich",
+    context_settings={"help_option_names": ["--help", "-h"]},
 )
 
 # -- Subcommand groups --------------------------------------------------------

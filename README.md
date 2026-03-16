@@ -5,7 +5,9 @@ A general-purpose autonomous development orchestrator. Autopilot CLI manages mul
 ## Requirements
 
 - Python 3.12+
-- [uv](https://docs.astral.sh/uv/) (recommended)
+- [uv](https://docs.astral.sh/uv/)
+- [just](https://github.com/casey/just)
+- [asdf](https://asdf-vm.com/) (optional, manages tool versions via `.tool-versions`)
 
 ## Installation
 
@@ -13,33 +15,39 @@ A general-purpose autonomous development orchestrator. Autopilot CLI manages mul
 # Clone and install in development mode
 git clone https://github.com/mandelbro/autopilot-cli.git
 cd autopilot-cli
-uv pip install -e ".[dev]"
+asdf install && just init
 ```
 
 ## Usage
 
 ```bash
 # Show help
-autopilot --help
+just run --help
 
 # Show version
-autopilot --version
+just run --version
 ```
 
 ## Development
 
+This project uses [just](https://github.com/casey/just) as a task runner and [uv](https://docs.astral.sh/uv/) for package management.
+
 ```bash
 # Install dev dependencies
-uv pip install -e ".[dev]"
+just init              # uv sync --extra dev
 
-# Run tests
-pytest
+# Run all checks (format, lint, typecheck, test)
+just
 
-# Lint
-ruff check src/ tests/
+# Individual commands
+just test              # uv run pytest
+just lint              # uv run ruff check --fix src/ tests/
+just format            # uv run ruff format src/ tests/
+just typecheck         # uv run pyright
+just coverage          # uv run pytest --cov=autopilot --cov-report=term-missing --cov-fail-under=80
 
-# Type check
-pyright
+# Clean build artifacts
+just clean
 ```
 
 ## Project Structure
@@ -62,6 +70,14 @@ src/autopilot/
 - **Enforcement**: 11-category anti-pattern detection with 5 enforcement layers (editor, pre-commit, CI, guardrails, protected regions)
 - **Coordination**: Document-mediated agent communication via markdown board files
 - **CLI**: Typer + Rich for terminal UI with interactive REPL
+
+## Troubleshooting
+
+If `just run` fails with `ModuleNotFoundError: No module named 'autopilot'`, rebuild the virtual environment:
+
+```bash
+rm -rf .venv && just init
+```
 
 ## License
 
