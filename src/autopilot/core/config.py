@@ -171,6 +171,30 @@ class WorkspaceConfig(BaseModel):
     max_workspaces: int = Field(default=5, gt=0)
 
 
+class DebuggingToolConfig(BaseModel):
+    """Configuration for a single debugging tool backend."""
+
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    module: str = ""
+    class_name: str = Field(default="", alias="class")
+    settings: dict[str, object] = Field(default_factory=dict)
+
+
+class DebuggingConfig(BaseModel):
+    """Debugging agent configuration (RFC Section 3.4.1)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    enabled: bool = False
+    tool: str = "browser_mcp"
+    tools: dict[str, DebuggingToolConfig] = Field(default_factory=dict)
+    max_fix_iterations: int = Field(default=3, gt=0, le=5)
+    timeout_seconds: int = Field(default=1800, gt=0)
+    regression_test_framework: str = "pytest"
+    ux_review_enabled: bool = True
+
+
 class AutopilotConfig(BaseModel):
     """Root configuration model."""
 
@@ -190,6 +214,7 @@ class AutopilotConfig(BaseModel):
         default_factory=DeploymentMonitoringConfig
     )
     workspace: WorkspaceConfig = Field(default_factory=WorkspaceConfig)
+    debugging: DebuggingConfig = Field(default_factory=DebuggingConfig)
 
     @classmethod
     def from_yaml(cls, path: Path) -> Self:
@@ -225,7 +250,7 @@ class AutopilotConfig(BaseModel):
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             yaml.dump(
-                self.model_dump(mode="json"),
+                self.model_dump(mode="json", by_alias=True),
                 f,
                 default_flow_style=False,
                 sort_keys=False,

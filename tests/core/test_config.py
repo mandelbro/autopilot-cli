@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from autopilot.core.config import (
     AgentsConfig,
     AutopilotConfig,
+    DebuggingConfig,
+    DebuggingToolConfig,
     DeploymentMonitoringConfig,
     EnforcementConfig,
     GitConfig,
@@ -368,6 +370,132 @@ class TestWorkspaceConfig:
         loaded = AutopilotConfig.from_yaml(yaml_path)
         assert loaded.workspace.enabled is False
         assert loaded.workspace.base_dir == "~/.autopilot/workspaces"
+
+
+class TestDebuggingToolConfig:
+    def test_defaults(self) -> None:
+        cfg = DebuggingToolConfig()
+        assert cfg.module == ""
+        assert cfg.class_name == ""
+        assert cfg.settings == {}
+
+    def test_alias_class(self) -> None:
+        """The 'class' alias maps to class_name in Python."""
+        cfg = DebuggingToolConfig.model_validate(
+            {"class": "BrowserMCP", "module": "autopilot.tools"}
+        )
+        assert cfg.class_name == "BrowserMCP"
+        assert cfg.module == "autopilot.tools"
+
+    def test_populate_by_name(self) -> None:
+        """Both 'class' (alias) and 'class_name' (field name) are accepted."""
+        cfg = DebuggingToolConfig(class_name="Direct")
+        assert cfg.class_name == "Direct"
+
+    def test_frozen(self) -> None:
+        cfg = DebuggingToolConfig()
+        with pytest.raises(ValidationError):
+            cfg.module = "other"  # type: ignore[misc]
+
+    def test_serializes_as_class_alias(self) -> None:
+        cfg = DebuggingToolConfig(class_name="MyTool", module="mod")
+        dumped = cfg.model_dump(by_alias=True)
+        assert "class" in dumped
+        assert dumped["class"] == "MyTool"
+
+
+class TestDebuggingConfig:
+    def test_defaults(self) -> None:
+        cfg = DebuggingConfig()
+        assert cfg.enabled is False
+        assert cfg.tool == "browser_mcp"
+        assert cfg.tools == {}
+        assert cfg.max_fix_iterations == 3
+        assert cfg.timeout_seconds == 1800
+        assert cfg.regression_test_framework == "pytest"
+        assert cfg.ux_review_enabled is True
+
+    def test_frozen(self) -> None:
+        cfg = DebuggingConfig()
+        with pytest.raises(ValidationError):
+            cfg.enabled = True  # type: ignore[misc]
+
+    def test_rejects_zero_max_fix_iterations(self) -> None:
+        with pytest.raises(ValidationError, match="max_fix_iterations"):
+            DebuggingConfig(max_fix_iterations=0)
+
+    def test_rejects_excess_max_fix_iterations(self) -> None:
+        with pytest.raises(ValidationError, match="max_fix_iterations"):
+            DebuggingConfig(max_fix_iterations=6)
+
+    def test_rejects_zero_timeout(self) -> None:
+        with pytest.raises(ValidationError, match="timeout_seconds"):
+            DebuggingConfig(timeout_seconds=0)
+
+    def test_with_tools(self) -> None:
+        cfg = DebuggingConfig(
+            tools={
+                "browser_mcp": DebuggingToolConfig(
+                    module="autopilot.tools.browser",
+                    class_name="BrowserMCP",
+                    settings={"headless": True},
+                )
+            }
+        )
+        assert "browser_mcp" in cfg.tools
+        assert cfg.tools["browser_mcp"].class_name == "BrowserMCP"
+
+    def test_yaml_round_trip_with_debugging(self, tmp_path: Path) -> None:
+        original = AutopilotConfig(
+            project=ProjectConfig(name="debug-test"),
+            debugging=DebuggingConfig(
+                enabled=True,
+                tool="playwright",
+                tools={
+                    "playwright": DebuggingToolConfig(
+                        module="autopilot.tools.pw",
+                        class_name="PlaywrightTool",
+                        settings={"headless": False},
+                    )
+                },
+                max_fix_iterations=5,
+                timeout_seconds=3600,
+            ),
+        )
+        yaml_path = tmp_path / "config.yaml"
+        original.to_yaml(yaml_path)
+        loaded = AutopilotConfig.from_yaml(yaml_path)
+
+        assert loaded.debugging.enabled is True
+        assert loaded.debugging.tool == "playwright"
+        assert loaded.debugging.max_fix_iterations == 5
+        assert loaded.debugging.timeout_seconds == 3600
+        assert "playwright" in loaded.debugging.tools
+        assert loaded.debugging.tools["playwright"].class_name == "PlaywrightTool"
+
+    def test_yaml_class_alias_serialization(self, tmp_path: Path) -> None:
+        """Verify that to_yaml writes 'class' (not 'class_name') in YAML output."""
+        original = AutopilotConfig(
+            project=ProjectConfig(name="alias-test"),
+            debugging=DebuggingConfig(
+                tools={
+                    "t": DebuggingToolConfig(class_name="Foo"),
+                }
+            ),
+        )
+        yaml_path = tmp_path / "config.yaml"
+        original.to_yaml(yaml_path)
+
+        raw = yaml_path.read_text()
+        assert "class: Foo" in raw
+        assert "class_name" not in raw
+
+    def test_yaml_without_debugging_section(self, tmp_path: Path) -> None:
+        yaml_path = tmp_path / "config.yaml"
+        yaml_path.write_text("project:\n  name: no-debug\n")
+        loaded = AutopilotConfig.from_yaml(yaml_path)
+        assert loaded.debugging.enabled is False
+        assert loaded.debugging.tool == "browser_mcp"
 
 
 class TestDeepMerge:

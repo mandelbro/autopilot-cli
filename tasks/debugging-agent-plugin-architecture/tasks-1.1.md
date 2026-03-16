@@ -14,7 +14,7 @@
 
 - **Title**: Create debugging package structure and DebuggingTool Protocol
 - **File**: src/autopilot/debugging/tools/protocol.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a plugin developer, I want a clearly defined Protocol for debugging tools, so that I can implement new tool backends (browser, desktop, API) that the debugging pipeline accepts without inheritance coupling.
@@ -90,7 +90,7 @@ This follows the `EnforcementRule` Protocol pattern in `src/autopilot/enforcemen
 
 - **Title**: Create debugging data models
 - **File**: src/autopilot/debugging/models.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a debugging pipeline operator, I want typed, immutable data models for debugging tasks and results, so that the pipeline has a clear contract for inputs and outputs.
@@ -145,7 +145,7 @@ All models follow the frozen dataclass pattern from `src/autopilot/core/models.p
 
 - **Title**: Add DebuggingConfig and DebuggingToolConfig to AutopilotConfig
 - **File**: src/autopilot/core/config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want debugging configuration in my project's `config.yaml`, so that I can enable/disable debugging, select a tool plugin, and tune pipeline parameters without code changes.
@@ -201,7 +201,7 @@ The discovery document (lines 631-659) defines the config models. Follow the exa
 
 - **Title**: Unit tests for Phase 1 (protocol, models, config)
 - **File**: tests/debugging/test_models.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a developer, I want comprehensive tests for the debugging data models and protocol, so that I can refactor confidently knowing the contracts are verified.
@@ -269,7 +269,7 @@ Follow test patterns from `tests/conftest.py` (fixtures: `project_dir`, `autopil
 
 - **Title**: Pipeline support functions
 - **File**: src/autopilot/debugging/pipeline.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a debugging agent, I want guardrail functions to validate my actions (source scope, fix iteration limits, quality gates), so that I stay within project constraints during autonomous debugging runs.
