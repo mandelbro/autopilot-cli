@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -104,6 +105,44 @@ class TestLoadDebuggingTask:
         assert step.expect == ""
         assert step.timeout_seconds == 30
 
+    def test_raises_on_non_list_steps(self, tmp_path: Path) -> None:
+        task_file = tmp_path / "task.yaml"
+        task_file.write_text(
+            yaml.dump(
+                {
+                    "task_id": "DBG-005",
+                    "feature": "login",
+                    "title": "Test",
+                    "description": "Desc",
+                    "staging_url": "http://staging.example.com",
+                    "steps": "not a list",
+                    "acceptance_criteria": ["OK"],
+                    "source_scope": ["src/"],
+                }
+            )
+        )
+        with pytest.raises(ValueError, match="must be a list"):
+            load_debugging_task(task_file)
+
+    def test_raises_on_null_acceptance_criteria(self, tmp_path: Path) -> None:
+        task_file = tmp_path / "task.yaml"
+        task_file.write_text(
+            yaml.dump(
+                {
+                    "task_id": "DBG-006",
+                    "feature": "login",
+                    "title": "Test",
+                    "description": "Desc",
+                    "staging_url": "http://staging.example.com",
+                    "steps": [{"action": "click", "target": "#btn"}],
+                    "acceptance_criteria": None,
+                    "source_scope": ["src/"],
+                }
+            )
+        )
+        with pytest.raises(ValueError, match="must be a list"):
+            load_debugging_task(task_file)
+
     def test_optional_fields_default(self, tmp_path: Path) -> None:
         """Optional fields like ux_review_enabled default correctly."""
         task_file = tmp_path / "task.yaml"
@@ -186,29 +225,40 @@ class TestRunQualityGates:
     """Tests for run_quality_gates."""
 
     def test_success(self, tmp_path: Path) -> None:
-        with patch("autopilot.debugging.pipeline.subprocess") as mock_sub:
-            mock_sub.run.return_value.returncode = 0
-            mock_sub.run.return_value.stdout = "All checks passed"
-            mock_sub.run.return_value.stderr = ""
+        result = subprocess.CompletedProcess(
+            args=["just", "all"], returncode=0, stdout="All checks passed", stderr=""
+        )
+        with patch("autopilot.debugging.pipeline.subprocess.run", return_value=result):
             passed, output = run_quality_gates(tmp_path)
         assert passed is True
         assert "All checks passed" in output
 
     def test_failure(self, tmp_path: Path) -> None:
-        with patch("autopilot.debugging.pipeline.subprocess") as mock_sub:
-            mock_sub.run.return_value.returncode = 1
-            mock_sub.run.return_value.stdout = ""
-            mock_sub.run.return_value.stderr = "Lint error"
+        result = subprocess.CompletedProcess(
+            args=["just", "all"], returncode=1, stdout="", stderr="Lint error"
+        )
+        with patch("autopilot.debugging.pipeline.subprocess.run", return_value=result):
             passed, output = run_quality_gates(tmp_path)
         assert passed is False
         assert "Lint error" in output
 
     def test_just_not_found(self, tmp_path: Path) -> None:
-        with patch("autopilot.debugging.pipeline.subprocess") as mock_sub:
-            mock_sub.run.side_effect = FileNotFoundError("just not found")
+        with patch(
+            "autopilot.debugging.pipeline.subprocess.run",
+            side_effect=FileNotFoundError("just not found"),
+        ):
             passed, output = run_quality_gates(tmp_path)
         assert passed is False
         assert "not found" in output
+
+    def test_timeout(self, tmp_path: Path) -> None:
+        with patch(
+            "autopilot.debugging.pipeline.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="just all", timeout=60),
+        ):
+            passed, output = run_quality_gates(tmp_path, timeout_seconds=60)
+        assert passed is False
+        assert "timed out" in output
 
 
 # -- track_fix_iteration --
@@ -224,12 +274,13 @@ class TestTrackFixIteration:
 
     def test_at_max(self) -> None:
         can_continue, msg = track_fix_iteration("DBG-001", attempt=3, max_iterations=3)
-        assert can_continue is False
-        assert "Escalating" in msg
+        assert can_continue is True
+        assert "3/3" in msg
 
     def test_beyond_max(self) -> None:
-        can_continue, msg = track_fix_iteration("DBG-001", attempt=5, max_iterations=3)
+        can_continue, msg = track_fix_iteration("DBG-001", attempt=4, max_iterations=3)
         assert can_continue is False
+        assert "Escalating" in msg
 
 
 # -- validate_debugging_run --

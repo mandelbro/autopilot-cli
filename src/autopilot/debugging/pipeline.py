@@ -64,6 +64,11 @@ def load_debugging_task(task_path: Path) -> DebuggingTask:
             msg = f"Missing required field '{field_name}' in {task_path}"
             raise ValueError(msg)
 
+    for list_field in ("steps", "acceptance_criteria", "source_scope"):
+        if not isinstance(d[list_field], list):
+            msg = f"Field '{list_field}' must be a list in {task_path}, got {type(d[list_field]).__name__}"
+            raise ValueError(msg)
+
     raw_steps: list[dict[str, Any]] = d["steps"]
     steps = tuple(
         TestStep(
@@ -121,11 +126,15 @@ def validate_source_scope(
     return True
 
 
-def run_quality_gates(project_dir: Path) -> tuple[bool, str]:
+def run_quality_gates(
+    project_dir: Path,
+    timeout_seconds: int = 1800,
+) -> tuple[bool, str]:
     """Run ``just all`` as the quality gate and report the result.
 
     Args:
         project_dir: Root directory of the project under test.
+        timeout_seconds: Maximum seconds to wait for the command.
 
     Returns:
         A ``(passed, output)`` tuple.  *passed* is ``True`` when the
@@ -138,9 +147,12 @@ def run_quality_gates(project_dir: Path) -> tuple[bool, str]:
             capture_output=True,
             text=True,
             cwd=project_dir,
+            timeout=timeout_seconds,
         )
     except FileNotFoundError:
         return (False, "quality gate runner 'just' not found")
+    except subprocess.TimeoutExpired:
+        return (False, f"quality gates timed out after {timeout_seconds}s")
 
     if proc.returncode == 0:
         return (True, proc.stdout)
@@ -164,7 +176,7 @@ def track_fix_iteration(
         A ``(can_continue, message)`` tuple.  *can_continue* is
         ``False`` when the iteration limit has been reached.
     """
-    if attempt < max_iterations:
+    if attempt <= max_iterations:
         return (True, f"Attempt {attempt}/{max_iterations} for task {task_id}")
 
     return (
