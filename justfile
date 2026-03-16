@@ -1,6 +1,6 @@
 set dotenv-load := true
 
-default: lint typecheck test
+default: format lint typecheck test
 
 # Install all dependencies
 init:
