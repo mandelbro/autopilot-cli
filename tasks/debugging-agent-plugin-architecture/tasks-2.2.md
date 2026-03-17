@@ -162,8 +162,8 @@ All tests work without Cua SDK or Lume. Mock subprocess and imports. Integration
 ### Task ID: 018
 
 - **Title**: Orchestration integration (hooks, scheduler, result reporting)
-- **File**: src/autopilot/orchestration/hooks.py
-- **Complete**: [ ]
+- **File**: src/autopilot/orchestration/debugging_hooks.py
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project operator, I want debugging runs to trigger automatically after deployments and results to appear in cycle reports, so that the debugging pipeline is fully integrated with the autopilot orchestration lifecycle.
