@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import structlog.testing
 
 from autopilot.core.config import DebuggingConfig, DebuggingToolConfig
 from autopilot.debugging.loader import load_debugging_tool, validate_plugin_class
@@ -85,55 +87,28 @@ class _WrongVersionTool(_MockDebuggingTool):
     protocol_version: int = 999
 
 
-class _NoVersionTool:
-    """Mock tool satisfying the protocol but missing protocol_version."""
+class _ProtocolVersionBlocker:
+    """Descriptor that makes ``hasattr(cls, 'protocol_version')`` False."""
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self._name = name
+
+    def __get__(self, obj: Any, objtype: type | None = None) -> int:
+        raise AttributeError(self._name)
+
+
+class _NoVersionTool(_MockDebuggingTool):
+    """Mock tool satisfying the protocol but missing protocol_version.
+
+    Inherits all methods from _MockDebuggingTool to avoid duplication.
+    Uses a descriptor to block the inherited ``protocol_version``.
+    """
+
+    protocol_version = _ProtocolVersionBlocker()  # type: ignore[assignment]
 
     @property
     def name(self) -> str:
         return "no-version-tool"
-
-    @property
-    def capabilities(self) -> frozenset[ToolCapability]:
-        return frozenset(ToolCapability)
-
-    def provision(self, settings: dict[str, object]) -> ProvisionResult:
-        return ProvisionResult(success=True)
-
-    def deprovision(self) -> None:
-        return None
-
-    def check_provisioned(self) -> ProvisionStatus:
-        return ProvisionStatus(provisioned=True, ready=True)
-
-    def setup(self, settings: dict[str, object]) -> None:
-        return None
-
-    def teardown(self) -> None:
-        return None
-
-    def execute_step(
-        self,
-        action: str,
-        target: str,
-        *,
-        value: str = "",
-        expect: str = "",
-        timeout_seconds: int = 30,
-    ) -> InteractionResult:
-        return InteractionResult(success=True)
-
-    def capture_diagnostic_evidence(self) -> DiagnosticEvidence:
-        return DiagnosticEvidence()
-
-    def capture_screenshot(self, label: str) -> str:
-        return f"/tmp/{label}.png"
-
-    def evaluate_ux(
-        self,
-        criteria: tuple[str, ...],
-        design_system_ref: str = "",
-    ) -> tuple[UXObservation, ...]:
-        return ()
 
 
 def _make_config(
@@ -217,31 +192,37 @@ class TestLoadDebuggingTool:
         ):
             load_debugging_tool(config)
 
-    def test_version_mismatch_logs_warning(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_version_mismatch_logs_warning(self) -> None:
         mock_module = MagicMock()
         mock_module.BrowserMCPTool = _WrongVersionTool
 
         config = _make_config()
 
-        with patch("autopilot.debugging.loader.importlib.import_module", return_value=mock_module):
+        with (
+            structlog.testing.capture_logs() as captured,
+            patch("autopilot.debugging.loader.importlib.import_module", return_value=mock_module),
+        ):
             tool = load_debugging_tool(config)
 
         assert tool is not None
-        captured = capsys.readouterr()
-        assert "protocol_version_mismatch" in captured.out
+        events = [e["event"] for e in captured]
+        assert "protocol_version_mismatch" in events
 
-    def test_missing_version_logs_warning(self, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_missing_version_logs_warning(self) -> None:
         mock_module = MagicMock()
         mock_module.BrowserMCPTool = _NoVersionTool
 
         config = _make_config()
 
-        with patch("autopilot.debugging.loader.importlib.import_module", return_value=mock_module):
+        with (
+            structlog.testing.capture_logs() as captured,
+            patch("autopilot.debugging.loader.importlib.import_module", return_value=mock_module),
+        ):
             tool = load_debugging_tool(config)
 
         assert tool is not None
-        captured = capsys.readouterr()
-        assert "missing_protocol_version" in captured.out
+        events = [e["event"] for e in captured]
+        assert "missing_protocol_version" in events
 
 
 # -- validate_plugin_class --

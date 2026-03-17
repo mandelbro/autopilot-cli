@@ -70,8 +70,8 @@ def load_debugging_tool(config: DebuggingConfig) -> DebuggingTool:
 
     try:
         module = importlib.import_module(module_path)
-    except ModuleNotFoundError as exc:
-        log.error("module_not_found", error=str(exc))
+    except ImportError as exc:
+        log.error("module_import_failed", error=str(exc))
         msg = f"Could not import module '{module_path}' for tool '{tool_name}': {exc}"
         raise ImportError(msg) from exc
 
