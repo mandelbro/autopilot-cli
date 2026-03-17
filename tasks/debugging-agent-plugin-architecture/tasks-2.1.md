@@ -152,7 +152,7 @@ Per ADR-D05, config mutation: load YAML → modify dict → validate via `Autopi
 
 - **Title**: Debugging agent system prompt, AgentRegistry integration, and init defaults
 - **File**: .autopilot/agents/debugging-agent.md, src/autopilot/cli/app.py (init command)
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project operator, I want the debugging agent to appear in `autopilot agent list` and be dispatchable like any other agent, so that debugging runs integrate seamlessly with the existing orchestration pipeline.
@@ -215,7 +215,7 @@ Per ADR-D03, debugging agent is standard agent discovered from `.md` file by `Ag
 
 - **Title**: Implement `collect_debugging_result` with agent output schema
 - **File**: src/autopilot/debugging/pipeline.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a debugging pipeline operator, I want the agent's output to be parsed into a structured `DebuggingResult`, so that orchestration can process and report debugging outcomes programmatically.

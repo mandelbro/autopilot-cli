@@ -71,6 +71,7 @@ class TestAgentTemplates:
             "product-director.md",
             "devops-agent.md",
             "norwood-discovery.md",
+            "debugging-agent.md",
         }
         actual = {f.name for f in templates_dir.iterdir() if f.suffix == ".md"}
         assert expected == actual
@@ -83,6 +84,7 @@ class TestAgentTemplates:
             "agents/technical-architect.md",
             "agents/product-director.md",
             "agents/devops-agent.md",
+            "agents/debugging-agent.md",
         ]
         for name in agents:
             template = env.get_template(name)
