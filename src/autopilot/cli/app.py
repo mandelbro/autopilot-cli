@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 from autopilot import __version__
 from autopilot.cli.completions import complete_project_names, complete_project_types
+from autopilot.cli.debug import debug_app
 from autopilot.cli.discover import register_discover_commands
 from autopilot.cli.enforce import register_enforce_commands
 from autopilot.cli.hive import hive_app
@@ -46,6 +47,7 @@ report_app = typer.Typer(name="report", help="Reporting and analytics.")
 
 app.add_typer(project_app)
 app.add_typer(hive_app)
+app.add_typer(debug_app)
 app.add_typer(task_app)
 app.add_typer(session_app)
 app.add_typer(plan_app)

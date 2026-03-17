@@ -14,7 +14,7 @@
 
 - **Title**: CLI debug subcommand group -- run, list-tools, status
 - **File**: src/autopilot/cli/debug.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project operator, I want `autopilot debug run`, `autopilot debug list-tools`, and `autopilot debug status` commands, so that I can execute debugging runs and inspect the debugging pipeline state from the terminal.
@@ -61,7 +61,7 @@ Follow existing CLI subcommand patterns (e.g., `src/autopilot/cli/enforce.py`, `
 
 - **Title**: CLI plugin management commands (add-tool, remove-tool, validate-tool, provision, deprovision)
 - **File**: src/autopilot/cli/debug.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project operator, I want CLI commands to register, validate, and provision debugging tool plugins, so that I can manage plugin lifecycle without editing YAML manually.
@@ -110,7 +110,7 @@ Per ADR-D05, config mutation: load YAML → modify dict → validate via `Autopi
 
 - **Title**: Unit tests for CLI debug commands
 - **File**: tests/cli/test_debug.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a developer, I want tests for all `autopilot debug` CLI commands, so that plugin management and pipeline execution are verified.
