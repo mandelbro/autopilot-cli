@@ -14,7 +14,7 @@
 
 - **Title**: Add HiveMindConfig to AutopilotConfig
 - **File**: src/autopilot/core/config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want hive-mind configuration in my project's `config.yaml`, so that I can enable/disable hive-mind orchestration, set worker counts, toggle quality passes, and configure the code review loop without code changes.
@@ -91,7 +91,7 @@ Follow the exact same pattern as existing config sections (e.g., `DebuggingConfi
 
 - **Title**: Add SessionType.HIVE_MIND and HiveMindResult model
 - **File**: src/autopilot/core/models.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a session tracking system, I want a `HIVE_MIND` session type and a structured result model, so that hive-mind sessions are tracked alongside daemon and manual sessions with their specific outcome data.
@@ -154,7 +154,7 @@ The `SessionType` enum is used in `Session.from_json()` to deserialize session r
 
 - **Title**: Unit tests for HiveMindConfig and HiveMindResult
 - **File**: tests/core/test_hive_config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests verifying the hive-mind config and result models, so that I can refactor confidently knowing the data contracts are verified.
