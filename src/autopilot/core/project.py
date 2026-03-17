@@ -23,13 +23,13 @@ if TYPE_CHECKING:
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
+from autopilot.core.templates import PACKAGE_TEMPLATES as _TEMPLATES_DIR
 from autopilot.utils.paths import ensure_dir_structure, get_global_dir
 
 _log = logging.getLogger(__name__)
 
 _VALID_PROJECT_TYPE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
-_TEMPLATES_DIR = Path(__file__).resolve().parents[3] / "templates"
 _GITIGNORE_CONTENT = "# Autopilot runtime state (not version controlled)\nstate/\nlogs/\n"
 
 
