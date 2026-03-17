@@ -330,6 +330,11 @@ class TestConfigMutation:
 
         _load_modify_save_config(config_path, _add)
 
+        # Verify YAML on disk uses 'class' alias, not 'class_name'
+        yaml_text = config_path.read_text(encoding="utf-8")
+        assert "class: SomeTool" in yaml_text
+        assert "class_name" not in yaml_text
+
         # Verify roundtrip: re-load from disk
         reloaded = AutopilotConfig.from_yaml(config_path)
         assert "new_tool" in reloaded.debugging.tools

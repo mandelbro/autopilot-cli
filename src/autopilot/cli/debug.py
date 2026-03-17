@@ -98,7 +98,11 @@ def _load_modify_save_config(
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(
-        yaml.dump(validated.model_dump(mode="json"), default_flow_style=False, sort_keys=False),
+        yaml.dump(
+            validated.model_dump(mode="json", by_alias=True),
+            default_flow_style=False,
+            sort_keys=False,
+        ),
         encoding="utf-8",
     )
 
@@ -307,8 +311,8 @@ def debug_remove_tool(
         console.print(f"[warning]Warning: '{name}' is the active debugging tool.[/warning]")
 
     def _remove_tool(raw: dict[str, Any]) -> None:
-        debugging: dict[str, Any] = raw.get("debugging", {})
-        tools: dict[str, Any] = debugging.get("tools", {})
+        debugging: dict[str, Any] = raw.setdefault("debugging", {})
+        tools: dict[str, Any] = debugging.setdefault("tools", {})
         tools.pop(name, None)
         raw.setdefault("project", {"name": config_path.parent.parent.name})
 
