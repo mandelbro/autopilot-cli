@@ -1,0 +1,17 @@
+expected_files:
+  - default.j2
+variables:
+  - task_ids
+  - task_file
+  - quality_command
+  - format_command
+  - code_review_enabled
+  - max_review_rounds
+  - auto_merge
+  - duplication_check
+  - cleanup_pass
+  - security_scan
+  - coverage_check
+  - file_size_check
+  - quality_gates
+  - sprint_record

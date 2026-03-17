@@ -195,6 +195,35 @@ class DebuggingConfig(BaseModel):
     ux_review_enabled: bool = True
 
 
+class HiveMindConfig(BaseModel):
+    """Hive-mind orchestration configuration."""
+
+    model_config = ConfigDict(frozen=True)
+
+    enabled: bool = False
+    namespace: str = ""
+    worker_count: int = Field(default=4, gt=0, le=15)
+    use_claude: bool = True
+    batch_strategy: Literal["auto", "manual"] = "auto"
+    objective_template: str = "default"
+    # Quality pass toggles
+    duplication_check: bool = True
+    cleanup_pass: bool = True
+    security_scan: bool = True
+    coverage_check: bool = True
+    file_size_check: bool = True
+    # Review loop
+    code_review_enabled: bool = True
+    code_review_label: str = "claude-review"
+    max_review_rounds: int = Field(default=3, gt=0, le=10)
+    auto_merge: bool = True
+    # Commands
+    format_command: str = "just format"
+    # Timeouts
+    spawn_timeout_seconds: int = Field(default=60, gt=0)
+    session_timeout_seconds: int = Field(default=14400, gt=0)
+
+
 class AutopilotConfig(BaseModel):
     """Root configuration model."""
 
@@ -215,6 +244,7 @@ class AutopilotConfig(BaseModel):
     )
     workspace: WorkspaceConfig = Field(default_factory=WorkspaceConfig)
     debugging: DebuggingConfig = Field(default_factory=DebuggingConfig)
+    hive_mind: HiveMindConfig = Field(default_factory=HiveMindConfig)
 
     @classmethod
     def from_yaml(cls, path: Path) -> Self:

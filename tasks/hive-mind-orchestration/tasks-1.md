@@ -14,7 +14,7 @@
 
 - **Title**: Add HiveMindConfig to AutopilotConfig
 - **File**: src/autopilot/core/config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want hive-mind configuration in my project's `config.yaml`, so that I can enable/disable hive-mind orchestration, set worker counts, toggle quality passes, and configure the code review loop without code changes.
@@ -91,7 +91,7 @@ Follow the exact same pattern as existing config sections (e.g., `DebuggingConfi
 
 - **Title**: Add SessionType.HIVE_MIND and HiveMindResult model
 - **File**: src/autopilot/core/models.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a session tracking system, I want a `HIVE_MIND` session type and a structured result model, so that hive-mind sessions are tracked alongside daemon and manual sessions with their specific outcome data.
@@ -154,7 +154,7 @@ The `SessionType` enum is used in `Session.from_json()` to deserialize session r
 
 - **Title**: Unit tests for HiveMindConfig and HiveMindResult
 - **File**: tests/core/test_hive_config.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests verifying the hive-mind config and result models, so that I can refactor confidently knowing the data contracts are verified.
@@ -203,7 +203,7 @@ Follow test patterns from `tests/core/test_config.py` (existing config tests). U
 
 - **Title**: Add render_to_string method to TemplateRenderer
 - **File**: src/autopilot/core/templates.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As the objective builder, I want to render Jinja2 templates to strings (not just files), so that I can construct hive-mind objective prompts from templates without writing to the filesystem.
@@ -273,7 +273,7 @@ The existing `render_to()` method writes rendered output to the filesystem. The 
 
 - **Title**: Create hive-objective default template and metadata
 - **File**: templates/hive-objective/default.j2
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a hive-mind operator, I want a well-structured default objective template, so that hive-mind sessions automatically include batch grouping, quality passes, code review loops, and task status updates without manual prompt construction.
@@ -348,7 +348,7 @@ The template system uses `TemplateRenderer` from `src/autopilot/core/templates.p
 
 - **Title**: Create HiveObjectiveBuilder
 - **File**: src/autopilot/orchestration/objective_builder.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As the hive-mind spawn command, I want a builder that constructs parameterized objective prompts from templates and config, so that I can generate rich, config-driven objectives without manual string construction.
@@ -436,7 +436,7 @@ This module bridges the config system and the template system to produce objecti
 
 - **Title**: Unit tests for TemplateRenderer.render_to_string and HiveObjectiveBuilder
 - **File**: tests/orchestration/test_objective_builder.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests verifying that templates render correctly with various config combinations, so that I can change templates or config without breaking objective generation.

@@ -57,6 +57,30 @@ class TemplateRenderer:
         self._user_dir = (user_templates_dir or get_global_dir() / "templates") / project_type
         self._template_config = self._load_template_config()
 
+    def _build_env(self) -> Environment:
+        """Build Jinja2 environment with user-override and package search paths."""
+        search_paths: list[str] = []
+        if self._user_dir.is_dir():
+            search_paths.append(str(self._user_dir))
+        if self._package_dir.is_dir():
+            search_paths.append(str(self._package_dir))
+
+        if not search_paths:
+            msg = f"No templates found for project type '{self._project_type}'"
+            raise ValueError(msg)
+
+        return Environment(
+            loader=FileSystemLoader(search_paths),
+            keep_trailing_newline=True,
+            undefined=StrictUndefined,
+        )
+
+    def render_to_string(self, template_name: str, context: dict[str, Any]) -> str:
+        """Render a single template to a string."""
+        env = self._build_env()
+        template = env.get_template(template_name)
+        return template.render(**context)
+
     def render_to(self, output_dir: Path, context: dict[str, Any]) -> list[str]:
         """Render all templates to output_dir, returning relative paths of created files."""
         files_created: list[str] = []
@@ -71,22 +95,7 @@ class TemplateRenderer:
             )
             files_created.extend(parent.render_to(output_dir, context))
 
-        # Build search paths: user override first, then package
-        search_paths: list[str] = []
-        if self._user_dir.is_dir():
-            search_paths.append(str(self._user_dir))
-        if self._package_dir.is_dir():
-            search_paths.append(str(self._package_dir))
-
-        if not search_paths:
-            msg = f"No templates found for project type '{self._project_type}'"
-            raise ValueError(msg)
-
-        env = Environment(
-            loader=FileSystemLoader(search_paths),
-            keep_trailing_newline=True,
-            undefined=StrictUndefined,
-        )
+        env = self._build_env()
 
         for template_name in env.list_templates():
             if template_name.startswith("_"):

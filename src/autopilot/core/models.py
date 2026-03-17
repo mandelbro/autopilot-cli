@@ -23,6 +23,7 @@ class SessionType(StrEnum):
     CYCLE = "cycle"
     DISCOVERY = "discovery"
     MANUAL = "manual"
+    HIVE_MIND = "hive_mind"
 
 
 class SessionStatus(StrEnum):
@@ -273,6 +274,24 @@ class SprintResult:
     points_completed: int = 0
     tasks_completed: int = 0
     tasks_carried_over: int = 0
+
+
+@dataclass(frozen=True)
+class HiveMindResult:
+    """Result from a hive-mind orchestration session."""
+
+    session_id: str
+    namespace: str
+    task_file: str
+    task_ids: tuple[str, ...]
+    exit_code: int = 0
+    duration_seconds: float = 0.0
+    output: str = ""
+    error: str = ""
+    tasks_completed: int | None = None
+    prs_created: int | None = None
+    prs_merged: int | None = None
+    batches_completed: int | None = None
 
 
 # -- Enforcement types --
