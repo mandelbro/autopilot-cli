@@ -130,7 +130,7 @@ Use `tmp_path` for file-based tests. Mock `subprocess.run` for `run_quality_gate
 
 - **Title**: BrowserMCPTool core class with action mapping and session management
 - **File**: src/autopilot/debugging/tools/browser_mcp.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a debugging agent testing a web application, I want a Browser MCP tool plugin that translates generic test steps (navigate, click, fill) into Browser MCP tool calls, so that I can interactively test deployed web apps.
@@ -179,7 +179,7 @@ Wraps ruflo browser MCP tools. See discovery lines 389-416. Synchronous (ADR-D02
 
 - **Title**: BrowserMCPTool diagnostics and UX evaluation capabilities
 - **File**: src/autopilot/debugging/tools/browser_mcp.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a debugging agent, I want the Browser MCP plugin to capture console errors, network failures, and screenshots for failure diagnosis, so that I can provide evidence-backed diagnoses to the fix cycle.
@@ -219,7 +219,7 @@ Wraps ruflo browser MCP tools. See discovery lines 389-416. Synchronous (ADR-D02
 
 - **Title**: Unit tests for Browser MCP plugin -- core (protocol, actions, provisioning)
 - **File**: tests/debugging/tools/test_browser_mcp.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests for the Browser MCP plugin's core functionality (protocol compliance, action mapping, provisioning), so that I can validate Task 008's implementation before building diagnostics.
@@ -256,7 +256,7 @@ Wraps ruflo browser MCP tools. See discovery lines 389-416. Synchronous (ADR-D02
 
 - **Title**: Unit tests for Browser MCP plugin -- diagnostics and UX
 - **File**: tests/debugging/tools/test_browser_mcp.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests for the Browser MCP plugin's diagnostic and UX capabilities, so that console capture, screenshots, and UX evaluation are verified without a running browser.
