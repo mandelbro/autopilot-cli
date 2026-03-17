@@ -206,7 +206,7 @@ Debugging agent dispatched like any other agent via `DispatchPlan`. Scheduler us
 
 - **Title**: Debugging agent usage guide documentation
 - **File**: docs/agents/debugging-agent.md
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want comprehensive documentation for the debugging agent, so that I can set up, configure, and troubleshoot debugging runs without reading source code.
