@@ -14,7 +14,7 @@
 
 - **Title**: Add preflight checks and spawn_hive method to HiveMindManager
 - **File**: src/autopilot/orchestration/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a hive-mind operator, I want a single `spawn_hive` method that validates preconditions and launches a hive-mind session via `hive-mind spawn`, so that I can replace the manual swarm-init-plus-spawn-workers workflow with one reliable call.
@@ -97,7 +97,7 @@ The discovery document (lines 500-616) specifies the new spawn pattern. With `--
 
 - **Title**: Add stop_hive method to HiveMindManager
 - **File**: src/autopilot/orchestration/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a hive-mind operator, I want to stop a running hive-mind session gracefully or forcefully, so that I can cancel long-running sessions or clean up orphaned processes.
@@ -172,7 +172,7 @@ Discovery lines 594-616 define the stop logic. Graceful shutdown sends `hive-min
 
 - **Title**: Create hive CLI command group with spawn and dry-run
 - **File**: src/autopilot/cli/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a developer, I want `autopilot hive spawn tasks/tasks-1.md --task-ids 001-008` to build an objective and launch a hive-mind session, so that I can orchestrate multi-task implementation from the CLI without constructing objective prompts manually.
@@ -249,7 +249,7 @@ Follow the pattern of existing CLI command groups like `src/autopilot/cli/sessio
 
 - **Title**: Task ID parser unit tests
 - **File**: tests/cli/test_hive_cli.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As a developer, I want tests for the task ID parsing logic, so that range and comma-separated formats are verified before integration testing.
@@ -294,7 +294,7 @@ The `_parse_task_ids` function is a pure utility function that can be tested wit
 
 - **Title**: Wire hive-mind into ResourceBroker and UsageTracker
 - **File**: src/autopilot/orchestration/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As the orchestration system, I want hive-mind spawns gated by resource limits and counted against usage quotas, so that runaway automation cannot exceed configured concurrency or daily invocation limits.
@@ -364,7 +364,7 @@ The `ResourceBroker` (in `orchestration/resource_broker.py`) gates concurrent ag
 
 - **Title**: Add session tracking to spawn_hive via SessionManager
 - **File**: src/autopilot/orchestration/hive.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 1
 
 - **User Story (business-facing)**: As the session management system, I want hive-mind sessions tracked in the session store with `SessionType.HIVE_MIND`, so that `autopilot session list` shows hive-mind sessions alongside daemon and manual sessions.
