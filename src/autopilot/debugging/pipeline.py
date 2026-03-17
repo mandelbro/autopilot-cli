@@ -9,16 +9,26 @@ See ADR-D03/D04 in the discovery document for rationale.
 
 from __future__ import annotations
 
+import json
+import re
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
-from autopilot.debugging.models import DebuggingTask, TestStep
+from autopilot.debugging.models import (
+    DebuggingResult,
+    DebuggingTask,
+    FixCycleResults,
+    InteractiveTestResults,
+    RegressionTestResults,
+    TestStep,
+    UXReviewResults,
+)
 
 if TYPE_CHECKING:
-    from autopilot.debugging.models import DebuggingResult
+    from autopilot.orchestration.agent_invoker import InvokeResult
 
 _REQUIRED_FIELDS: tuple[str, ...] = (
     "task_id",
@@ -206,3 +216,138 @@ def validate_debugging_run(
         return (True, f"Task {task.task_id} passed all checks")
 
     return (False, f"Task {task.task_id} did not pass: overall_pass=False")
+
+
+# -- Fenced-block JSON extraction pattern --
+_JSON_FENCE = re.compile(r"```json\s*\n(.*?)\n\s*```", re.DOTALL)
+
+
+def collect_debugging_result(
+    task: DebuggingTask,
+    agent_result: InvokeResult,
+) -> DebuggingResult:
+    """Parse the debugging agent's structured output into a :class:`DebuggingResult`.
+
+    Extracts a JSON block from the agent output — either a fenced ``json``
+    code block or raw JSON — and maps it to model dataclasses.  On parse
+    failure, returns an escalated result rather than raising.
+
+    Args:
+        task: The original debugging task specification.
+        agent_result: The invoke result from ``AgentInvoker``.
+
+    Returns:
+        A populated ``DebuggingResult``.
+    """
+    raw_output = agent_result.output.strip()
+
+    if not raw_output:
+        return DebuggingResult(
+            task_id=task.task_id,
+            escalated=True,
+            escalation_reason="Failed to parse agent output: empty output",
+        )
+
+    parsed = _extract_json(raw_output)
+    if parsed is None:
+        return DebuggingResult(
+            task_id=task.task_id,
+            escalated=True,
+            escalation_reason="Failed to parse agent output: no valid JSON found",
+        )
+
+    return _build_result(task.task_id, parsed)
+
+
+def _extract_json(text: str) -> dict[str, Any] | None:
+    """Extract a JSON object from agent output text.
+
+    Tries fenced ``json`` block first, then raw JSON parsing.
+    """
+    # Try fenced code block
+    match = _JSON_FENCE.search(text)
+    if match:
+        try:
+            data = json.loads(match.group(1))
+            if isinstance(data, dict):
+                return cast("dict[str, Any]", data)
+        except json.JSONDecodeError:
+            pass
+
+    # Try raw JSON
+    try:
+        data = json.loads(text)
+        if isinstance(data, dict):
+            return cast("dict[str, Any]", data)
+    except json.JSONDecodeError:
+        pass
+
+    return None
+
+
+def _build_result(task_id: str, data: dict[str, Any]) -> DebuggingResult:
+    """Build a DebuggingResult from parsed JSON data."""
+    test_results = _parse_test_results(data.get("test_results"))
+    fix_results = _parse_fix_results(data.get("fix_results"))
+    regression_results = _parse_regression_results(data.get("regression_results"))
+    ux_results = _parse_ux_results(data.get("ux_results"))
+
+    return DebuggingResult(
+        task_id=str(data.get("task_id", task_id)),
+        overall_pass=bool(data.get("overall_pass", False)),
+        test_results=test_results,
+        fix_results=fix_results,
+        regression_results=regression_results,
+        ux_results=ux_results,
+        duration_seconds=float(data.get("duration_seconds", 0.0)),
+        escalated=bool(data.get("escalated", False)),
+        escalation_reason=str(data.get("escalation_reason", "")),
+    )
+
+
+def _parse_test_results(data: Any) -> InteractiveTestResults | None:
+    if not isinstance(data, dict):
+        return None
+    d = cast("dict[str, Any]", data)
+    return InteractiveTestResults(
+        steps_total=int(d.get("steps_total", 0)),
+        steps_passed=int(d.get("steps_passed", 0)),
+        steps_failed=int(d.get("steps_failed", 0)),
+        all_passed=bool(d.get("all_passed", False)),
+        duration_seconds=float(d.get("duration_seconds", 0.0)),
+    )
+
+
+def _parse_fix_results(data: Any) -> FixCycleResults | None:
+    if not isinstance(data, dict):
+        return None
+    d = cast("dict[str, Any]", data)
+    return FixCycleResults(
+        resolved=bool(d.get("resolved", False)),
+        final_diagnosis=str(d.get("final_diagnosis", "")),
+        duration_seconds=float(d.get("duration_seconds", 0.0)),
+    )
+
+
+def _parse_regression_results(data: Any) -> RegressionTestResults | None:
+    if not isinstance(data, dict):
+        return None
+    d = cast("dict[str, Any]", data)
+    return RegressionTestResults(
+        tests_generated=int(d.get("tests_generated", 0)),
+        tests_passed=int(d.get("tests_passed", 0)),
+        tests_failed=int(d.get("tests_failed", 0)),
+        test_file_path=str(d.get("test_file_path", "")),
+        duration_seconds=float(d.get("duration_seconds", 0.0)),
+    )
+
+
+def _parse_ux_results(data: Any) -> UXReviewResults | None:
+    if not isinstance(data, dict):
+        return None
+    d = cast("dict[str, Any]", data)
+    return UXReviewResults(
+        overall_pass=bool(d.get("overall_pass", False)),
+        summary=str(d.get("summary", "")),
+        duration_seconds=float(d.get("duration_seconds", 0.0)),
+    )

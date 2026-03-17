@@ -76,6 +76,14 @@ git:
   branch_prefix: "feat/"
   branch_strategy: "batch"
 
+debugging:
+  enabled: false
+  tool: "browser_mcp"
+  tools:
+    browser_mcp:
+      module: "autopilot.debugging.tools.browser_mcp"
+      class: "BrowserMCPTool"
+
 deployment_monitoring:
   enabled: false
   check_frequency: "every_cycle"
