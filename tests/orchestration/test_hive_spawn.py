@@ -126,7 +126,7 @@ class TestSpawnHive:
         # Verify --claude in command
         cmd = mock_popen.call_args[0][0]
         assert "--claude" in cmd
-        assert "ruflo@latest" in " ".join(cmd)
+        assert "ruflo@1.0.0" in " ".join(cmd)
 
     @patch("autopilot.orchestration.hive.build_clean_env", return_value={})
     @patch("autopilot.orchestration.hive.run_with_timeout")

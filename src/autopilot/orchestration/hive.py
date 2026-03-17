@@ -230,14 +230,32 @@ class HiveMindManager:
             if not allowed:
                 raise HiveError(reason)
 
+        if self._usage_tracker:
+            allowed, reason = self._usage_tracker.can_execute(self._config.project.name)
+            if not allowed:
+                raise HiveError(reason)
+
         session = HiveSession(
             id=str(uuid.uuid4()),
             branch="",
             objective=objective,
-            metadata={"namespace": ns},
+            metadata={
+                "namespace": ns,
+                "task_file": task_file,
+                "task_ids": task_ids or [],
+            },
         )
 
-        cmd = ["npx", "ruflo@latest", "hive-mind", "spawn", objective, "--namespace", ns]
+        version = self._config.claude.claude_flow_version
+        cmd = [
+            "npx",
+            f"ruflo@{version}",
+            "hive-mind",
+            "spawn",
+            objective,
+            "--namespace",
+            ns,
+        ]
 
         if use_claude:
             cmd.append("--claude")
@@ -264,6 +282,9 @@ class HiveMindManager:
                 raise HiveError(msg)
             session.status = "spawned"
 
+        if self._resource_broker:
+            self._resource_broker.register_agent(self._config.project.name, f"hive-mind:{ns}")
+
         if self._usage_tracker:
             self._usage_tracker.record_cycle(self._config.project.name)
 
@@ -286,10 +307,11 @@ class HiveMindManager:
         pid = session.metadata.get("pid")
         ns = session.metadata.get("namespace", "")
 
+        version = self._config.claude.claude_flow_version
         if not force and ns:
             try:
                 run_with_timeout(
-                    ["npx", "ruflo@latest", "hive-mind", "shutdown", "--namespace", ns],
+                    ["npx", f"ruflo@{version}", "hive-mind", "shutdown", "--namespace", ns],
                     timeout_seconds=30,
                     cwd=self._cwd,
                     env=build_clean_env(),
@@ -298,7 +320,7 @@ class HiveMindManager:
                 _log.warning("hive_graceful_shutdown_timeout: namespace=%s", ns)
 
         if pid:
-            with contextlib.suppress(ProcessLookupError):
+            with contextlib.suppress(ProcessLookupError, PermissionError):
                 os.kill(pid, signal.SIGTERM)
 
         self._active_processes.pop(session.id, None)

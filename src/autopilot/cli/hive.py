@@ -33,12 +33,16 @@ def _parse_task_ids(task_ids_str: str) -> list[str]:
         part = part.strip()
         if not part:
             continue
-        if "-" in part:
-            start_str, end_str = part.split("-", 1)
-            start, end = int(start_str), int(end_str)
-            result.update(range(start, end + 1))
-        else:
-            result.add(int(part))
+        try:
+            if "-" in part:
+                start_str, end_str = part.split("-", 1)
+                start, end = int(start_str), int(end_str)
+                result.update(range(start, end + 1))
+            else:
+                result.add(int(part))
+        except ValueError as exc:
+            msg = f"Invalid task ID format '{part}': {exc}"
+            raise ValueError(msg) from exc
 
     return [f"{n:03d}" for n in sorted(result)]
 
@@ -68,7 +72,7 @@ def hive_spawn(
     from autopilot.core.config import AutopilotConfig, ProjectConfig
     from autopilot.orchestration.hive import HiveError, HiveMindManager
     from autopilot.orchestration.objective_builder import HiveObjectiveBuilder
-    from autopilot.utils.paths import find_autopilot_dir
+    from autopilot.utils.paths import find_autopilot_dir, get_global_dir
 
     ap_dir = find_autopilot_dir()
     if ap_dir is None:
@@ -76,7 +80,12 @@ def hive_spawn(
         raise typer.Exit(code=1)
 
     project_name = ap_dir.parent.name
-    config = AutopilotConfig(project=ProjectConfig(name=project_name))
+    global_config = get_global_dir() / "config.yaml"
+    project_config = ap_dir / "config.yaml"
+    if global_config.exists() or project_config.exists():
+        config = AutopilotConfig.merge(global_config, project_config)
+    else:
+        config = AutopilotConfig(project=ProjectConfig(name=project_name))
 
     parsed_ids = _parse_task_ids(task_ids)
     if not parsed_ids:
