@@ -7,7 +7,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   release-please:
@@ -16,7 +15,8 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      # googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@c3fc4de07084f75a2b61a5b933069bda6edf3d5c
         id: release
         with:
           config-file: release-please-config.json
@@ -32,12 +32,14 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
+      # astral-sh/setup-uv@v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@e4db8464a088ece1b920f60402e813ea4de65b8f
 
       - name: Set up Python
         run: uv python install 3.12
@@ -45,5 +47,6 @@ jobs:
       - name: Build package
         run: uv build
 
+      # pypa/gh-action-pypi-publish@v1.13.0
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e

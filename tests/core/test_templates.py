@@ -12,6 +12,55 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+class TestFindPackageTemplates:
+    """Verify template path resolution for both dev and installed modes."""
+
+    def test_dev_mode_finds_project_root_templates(self) -> None:
+        from autopilot.core.templates import PACKAGE_TEMPLATES
+
+        assert PACKAGE_TEMPLATES.is_dir()
+        assert (PACKAGE_TEMPLATES / "python").is_dir()
+
+    def test_installed_mode_prefers_package_templates(self, tmp_path: Path) -> None:
+        """When _templates/ exists inside the package dir, it should be preferred."""
+        from unittest.mock import patch
+
+        from autopilot.core.templates import _find_package_templates
+
+        # Simulate installed layout: autopilot/_templates/ exists
+        fake_installed = tmp_path / "autopilot" / "_templates"
+        fake_installed.mkdir(parents=True)
+        (fake_installed / "python").mkdir()
+
+        # Patch __file__ so the function computes the installed path as fake_installed
+        # _find_package_templates uses Path(__file__).resolve().parent.parent / "_templates"
+        # so __file__ needs to be at <tmp_path>/autopilot/core/templates.py
+        fake_file = tmp_path / "autopilot" / "core" / "templates.py"
+        fake_file.parent.mkdir(parents=True, exist_ok=True)
+        fake_file.touch()
+
+        with patch("autopilot.core.templates.__file__", str(fake_file)):
+            result = _find_package_templates()
+
+        assert result == fake_installed
+
+    def test_falls_back_to_dev_mode_when_no_installed_dir(self, tmp_path: Path) -> None:
+        from unittest.mock import patch
+
+        from autopilot.core.templates import _find_package_templates
+
+        # Simulate: no _templates/ in installed location, dev path also missing
+        fake_file = tmp_path / "autopilot" / "core" / "templates.py"
+        fake_file.parent.mkdir(parents=True, exist_ok=True)
+        fake_file.touch()
+
+        with patch("autopilot.core.templates.__file__", str(fake_file)):
+            result = _find_package_templates()
+
+        # Falls back to dev mode path (which won't exist but still returns it)
+        assert result.name == "templates"
+
+
 class TestListAvailableTemplates:
     def test_lists_package_templates(self) -> None:
         templates = list_available_templates()
