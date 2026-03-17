@@ -16,6 +16,12 @@ from typing import Any, cast
 import structlog
 
 from autopilot.debugging.models import ToolNotProvisionedError
+from autopilot.debugging.tools._helpers import (
+    classify_ux_criterion as _classify_ux_criterion,
+)
+from autopilot.debugging.tools._helpers import (
+    ensure_screenshot_dir as _ensure_screenshot_dir,
+)
 from autopilot.debugging.tools.protocol import (
     DiagnosticEvidence,
     InteractionResult,
@@ -26,8 +32,6 @@ from autopilot.debugging.tools.protocol import (
 )
 
 logger = structlog.get_logger(__name__)
-
-_DEFAULT_SCREENSHOT_DIR = ".autopilot/debugging/screenshots"
 
 ACTION_MAP: dict[str, str] = {
     "navigate": "browser_navigate",
@@ -327,24 +331,5 @@ def _build_network_capture_js() -> str:
     )
 
 
-def _ensure_screenshot_dir(project_dir: Path) -> Path:
-    """Create the screenshot directory if it does not exist."""
-    screenshot_dir = project_dir / _DEFAULT_SCREENSHOT_DIR
-    screenshot_dir.mkdir(parents=True, exist_ok=True)
-    return screenshot_dir
-
-
-def _classify_ux_criterion(criterion: str) -> str:
-    """Classify a UX criterion into a category based on keywords."""
-    criterion_lower = criterion.lower()
-    if any(kw in criterion_lower for kw in ("color", "contrast", "font", "style", "visual")):
-        return "visual_design"
-    if any(kw in criterion_lower for kw in ("nav", "menu", "link", "route", "breadcrumb")):
-        return "navigation"
-    if any(kw in criterion_lower for kw in ("form", "input", "button", "submit", "field")):
-        return "interaction"
-    if any(kw in criterion_lower for kw in ("error", "message", "feedback", "toast", "alert")):
-        return "feedback"
-    if any(kw in criterion_lower for kw in ("access", "aria", "screen reader", "keyboard")):
-        return "accessibility"
-    return "general"
+# _ensure_screenshot_dir and _classify_ux_criterion are imported from
+# autopilot.debugging.tools._helpers to avoid duplication across plugins.

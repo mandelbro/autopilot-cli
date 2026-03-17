@@ -12,13 +12,17 @@ from typing import TYPE_CHECKING
 import pytest
 
 from autopilot.debugging.models import ToolNotProvisionedError
+from autopilot.debugging.tools._helpers import (
+    classify_ux_criterion as _classify_ux_criterion,
+)
+from autopilot.debugging.tools._helpers import (
+    ensure_screenshot_dir as _ensure_screenshot_dir,
+)
 from autopilot.debugging.tools.browser_mcp import (
     ACTION_MAP,
     BrowserMCPTool,
     _build_console_capture_js,
     _build_network_capture_js,
-    _classify_ux_criterion,
-    _ensure_screenshot_dir,
 )
 from autopilot.debugging.tools.protocol import (
     DebuggingTool,

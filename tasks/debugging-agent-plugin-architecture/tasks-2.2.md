@@ -14,7 +14,7 @@
 
 - **Title**: DesktopAgentTool skeleton, provisioning, and VM lifecycle
 - **File**: src/autopilot/debugging/tools/desktop_agent.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a debugging agent testing a native desktop application (Slack, VS Code, etc.), I want a Desktop Agent plugin that manages VM lifecycle and provisioning, so that the heavy infrastructure (Lume, macOS image, models) can be set up and validated.
@@ -66,7 +66,7 @@ Wraps Cua SDK + Lume VM. Provisioning is heavy (~100GB). See discovery lines 417
 
 - **Title**: DesktopAgentTool action execution, retry logic, diagnostics, and dual-model config
 - **File**: src/autopilot/debugging/tools/desktop_agent.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a debugging agent, I want reliable action execution on desktop applications with automatic retry for click accuracy issues, diagnostic capture, and dual-model support, so that desktop testing is robust despite UI-TARS limitations.
@@ -121,7 +121,7 @@ Critical learnings from discovery: click accuracy ~70-80% needs retry+jitter, VM
 
 - **Title**: Unit tests for Desktop Agent plugin
 - **File**: tests/debugging/tools/test_desktop_agent.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a developer, I want comprehensive tests for the Desktop Agent plugin, so that VM lifecycle, retry logic, and dual-model configuration are verified without requiring actual infrastructure.
@@ -162,8 +162,8 @@ All tests work without Cua SDK or Lume. Mock subprocess and imports. Integration
 ### Task ID: 018
 
 - **Title**: Orchestration integration (hooks, scheduler, result reporting)
-- **File**: src/autopilot/orchestration/hooks.py
-- **Complete**: [ ]
+- **File**: src/autopilot/orchestration/debugging_hooks.py
+- **Complete**: [x]
 - **Sprint Points**: 3
 
 - **User Story (business-facing)**: As a project operator, I want debugging runs to trigger automatically after deployments and results to appear in cycle reports, so that the debugging pipeline is fully integrated with the autopilot orchestration lifecycle.
@@ -206,7 +206,7 @@ Debugging agent dispatched like any other agent via `DispatchPlan`. Scheduler us
 
 - **Title**: Debugging agent usage guide documentation
 - **File**: docs/agents/debugging-agent.md
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want comprehensive documentation for the debugging agent, so that I can set up, configure, and troubleshoot debugging runs without reading source code.
