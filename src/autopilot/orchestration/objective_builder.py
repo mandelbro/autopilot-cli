@@ -7,17 +7,14 @@ using project configuration to drive template context.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from autopilot.core.templates import TemplateRenderer
+from autopilot.core.templates import PACKAGE_TEMPLATES, TemplateRenderer
 
 if TYPE_CHECKING:
     from autopilot.core.config import AutopilotConfig, QualityGatesConfig
 
 _log = logging.getLogger(__name__)
-
-_PACKAGE_TEMPLATES = Path(__file__).resolve().parents[3] / "templates"
 
 
 class HiveObjectiveBuilder:
@@ -27,7 +24,7 @@ class HiveObjectiveBuilder:
         self._config = config
         self._renderer = TemplateRenderer(
             "hive-objective",
-            package_templates_dir=_PACKAGE_TEMPLATES,
+            package_templates_dir=PACKAGE_TEMPLATES,
         )
 
     def build(

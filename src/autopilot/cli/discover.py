@@ -195,8 +195,9 @@ def _load_discovery_template(ap_dir: Path, project: str, project_dir: Path) -> s
     from jinja2 import Environment, FileSystemLoader
 
     # Look for the template in the package templates directory
-    # discover.py is at src/autopilot/cli/ — parents[3] is the project root
-    package_templates = Path(__file__).resolve().parents[3] / "templates" / "python"
+    from autopilot.core.templates import PACKAGE_TEMPLATES
+
+    package_templates = PACKAGE_TEMPLATES / "python"
 
     if not package_templates.is_dir():
         logger.warning("templates_dir_not_found", path=str(package_templates))

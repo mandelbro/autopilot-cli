@@ -18,14 +18,26 @@ from autopilot.utils.paths import get_global_dir
 
 _log = logging.getLogger(__name__)
 
-_PACKAGE_TEMPLATES = Path(__file__).resolve().parents[3] / "templates"
+
+def _find_package_templates() -> Path:
+    """Locate bundled templates — works in dev mode and installed wheel."""
+    # Installed wheel: templates at autopilot/_templates/
+    installed = Path(__file__).resolve().parent.parent / "_templates"
+    if installed.is_dir():
+        return installed
+    # Dev mode: templates/ at project root (parents[3] from src/autopilot/core/)
+    dev = Path(__file__).resolve().parents[3] / "templates"
+    return dev
+
+
+PACKAGE_TEMPLATES = _find_package_templates()
 
 
 def list_available_templates() -> list[str]:
     """Return all registered template type names."""
     types: set[str] = set()
-    if _PACKAGE_TEMPLATES.is_dir():
-        for d in _PACKAGE_TEMPLATES.iterdir():
+    if PACKAGE_TEMPLATES.is_dir():
+        for d in PACKAGE_TEMPLATES.iterdir():
             if d.is_dir():
                 types.add(d.name)
     user_dir = get_global_dir() / "templates"
@@ -53,7 +65,7 @@ class TemplateRenderer:
         user_templates_dir: Path | None = None,
     ) -> None:
         self._project_type = project_type
-        self._package_dir = (package_templates_dir or _PACKAGE_TEMPLATES) / project_type
+        self._package_dir = (package_templates_dir or PACKAGE_TEMPLATES) / project_type
         self._user_dir = (user_templates_dir or get_global_dir() / "templates") / project_type
         self._template_config = self._load_template_config()
 
