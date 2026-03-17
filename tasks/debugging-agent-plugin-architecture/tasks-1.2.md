@@ -14,7 +14,7 @@
 
 - **Title**: Plugin loader with config-based discovery
 - **File**: src/autopilot/debugging/loader.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a project operator, I want the debugging pipeline to automatically load the configured tool plugin from my `config.yaml`, so that I can switch between Browser MCP and Desktop Agent without code changes.
@@ -69,7 +69,7 @@ Per ADR-D01, plugins are declared in `config.yaml` under `debugging.tools`. The 
 
 - **Title**: Unit tests for Phase 2 (pipeline and loader)
 - **File**: tests/debugging/test_pipeline.py
-- **Complete**: [ ]
+- **Complete**: [x]
 - **Sprint Points**: 2
 
 - **User Story (business-facing)**: As a developer, I want tests for the pipeline support functions and plugin loader, so that guardrails are verified and plugin loading edge cases are covered.
