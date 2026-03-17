@@ -51,7 +51,7 @@ class TestBuild:
         )
         builder = HiveObjectiveBuilder(config)
         result = builder.build("t.md", ["001"])
-        assert "code review" not in result.lower() or "Request a code review" not in result
+        assert "Request a code review" not in result
 
     def test_quality_passes_disabled(self) -> None:
         config = AutopilotConfig(
