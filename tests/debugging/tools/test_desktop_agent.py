@@ -13,10 +13,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from autopilot.debugging.models import ToolNotProvisionedError
+from autopilot.debugging.tools._helpers import ensure_screenshot_dir as _ensure_screenshot_dir
 from autopilot.debugging.tools.desktop_agent import (
     ACTION_MAP,
     DesktopAgentTool,
-    _ensure_screenshot_dir,
 )
 from autopilot.debugging.tools.protocol import (
     DebuggingTool,
