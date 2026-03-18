@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "autopilot-cli"
-version = "1.0.0"
+version = "1.1.0"
 description = "Autonomous multi-agent development orchestrator — task management, anti-pattern enforcement, hive-mind coordination, and interactive REPL from the terminal."
 readme = "README.md"
 requires-python = ">=3.12"
