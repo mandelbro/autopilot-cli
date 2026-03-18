@@ -13,9 +13,9 @@ just
 
 # Individual commands
 just test          # uv run pytest
-just lint          # uv run ruff check --fix src/ tests/
-just format        # uv run ruff format src/ tests/
-just typecheck     # uv run pyright
+just lint          # uv run python -m ruff check --fix src/ tests/
+just format        # uv run python -m ruff format src/ tests/
+just typecheck     # uv run python -m pyright
 just coverage      # pytest --cov=autopilot --cov-report=term-missing --cov-fail-under=80
 
 # Run a single test file
