@@ -20,15 +20,15 @@ coverage:
 
 # Lint and auto-fix
 lint:
-    uv run python -m ruff check --fix src/ tests/
+    uv run ruff check --fix src/ tests/
 
 # Format code
 format:
-    uv run python -m ruff format src/ tests/
+    uv run ruff format src/ tests/
 
 # Type check
 typecheck:
-    uv run python -m pyright
+    uv run pyright
 
 # Clean build artifacts
 clean:

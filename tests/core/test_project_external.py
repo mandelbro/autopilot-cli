@@ -93,6 +93,23 @@ class TestProjectRegistryExternalProjects:
         assert len(issues) == 1
         assert "task" in issues[0].issue.lower()
 
+    def test_validate_all_flags_empty_task_dir_for_external(self, tmp_path: Path) -> None:
+        """External projects with empty task_dir should be flagged."""
+        registry = ProjectRegistry(global_dir=tmp_path)
+        ext_path = tmp_path / "ext-project"
+        ext_path.mkdir()
+
+        registry.register(
+            "ext",
+            str(ext_path),
+            "external",
+            external=True,
+            task_dir="",
+        )
+        issues = registry.validate_all()
+        assert len(issues) == 1
+        assert "missing task_dir" in issues[0].issue
+
     def test_backward_compatible_load_no_external_field(self, tmp_path: Path) -> None:
         """Old projects.yaml without external/task_dir fields loads without error."""
         projects_file = tmp_path / "projects.yaml"

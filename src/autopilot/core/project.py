@@ -221,8 +221,12 @@ class ProjectRegistry:
                 issues.append(RegistryIssue(name, f"path does not exist: {path}"))
             elif is_external:
                 # External projects: validate task_dir exists instead of .autopilot/
-                if task_dir and not Path(task_dir).is_dir():
-                    issues.append(RegistryIssue(name, f"task directory does not exist: {task_dir}"))
+                if not task_dir:
+                    issues.append(RegistryIssue(name, "external project missing task_dir"))
+                elif not Path(task_dir).is_dir():
+                    issues.append(
+                        RegistryIssue(name, f"task directory does not exist: {task_dir}")
+                    )
             elif not (path_obj / ".autopilot").is_dir():
                 issues.append(RegistryIssue(name, f"no .autopilot/ directory at {path}"))
         return issues

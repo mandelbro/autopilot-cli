@@ -32,8 +32,11 @@ class DiscoverResult:
 
 
 def _extract_description(text: str) -> str:
-    """Extract the project description from a tasks-index.md file."""
+    """Extract the project description from the metadata section of tasks-index.md."""
     for line in text.split("\n"):
+        # Stop searching once we hit the file index section
+        if line.strip().startswith("## Task File Index"):
+            break
         m = _DESCRIPTION_RE.match(line)
         if m:
             return m.group(1).strip()
