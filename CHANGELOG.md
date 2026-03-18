@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/mandelbro/autopilot-cli/compare/v1.1.0...v1.1.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* **build:** Exclude .claude/ from sdist to prevent symlink build failure ([c079822](https://github.com/mandelbro/autopilot-cli/commit/c0798228f61bca4315d8b9455b11a2dd9559b302))
+
 ## [1.1.0](https://github.com/mandelbro/autopilot-cli/compare/v1.0.0...v1.1.0) (2026-03-18)
 
 
