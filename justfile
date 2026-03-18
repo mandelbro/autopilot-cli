@@ -18,17 +18,17 @@ test:
 coverage:
     uv run pytest --cov=autopilot --cov-report=term-missing --cov-fail-under=80
 
-# Lint and auto-fix
+# Lint and auto-fix (python -m bypasses asdf shim conflicts)
 lint:
-    uv run ruff check --fix src/ tests/
+    uv run python -m ruff check --fix src/ tests/
 
 # Format code
 format:
-    uv run ruff format src/ tests/
+    uv run python -m ruff format src/ tests/
 
 # Type check
 typecheck:
-    uv run pyright
+    uv run python -m pyright
 
 # Clean build artifacts
 clean:

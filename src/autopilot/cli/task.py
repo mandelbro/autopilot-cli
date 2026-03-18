@@ -37,6 +37,24 @@ def _resolve_task_dir() -> Path:
     return Path.cwd() / "tasks"
 
 
+def _resolve_task_dir_for_project(project_name: str) -> Path:
+    """Resolve task directory for a registered project by name."""
+    from autopilot.core.project import ProjectRegistry
+
+    registry = ProjectRegistry()
+    project = registry.find_by_name(project_name)
+    if project is None:
+        notification("error", f"Project '{project_name}' not found in registry.")
+        raise typer.Exit(code=1)
+
+    # External projects store their task_dir explicitly
+    if project.external and project.task_dir:
+        return Path(project.task_dir)
+
+    # Regular projects use <path>/tasks/
+    return Path(project.path) / "tasks"
+
+
 def validate_fibonacci(value: int) -> int:
     """Validate that sprint points are on the Fibonacci scale."""
     if value not in FIBONACCI_POINTS:
@@ -325,9 +343,12 @@ def register_task_commands(task_app: typer.Typer) -> None:
             help="Filter by status: pending, complete, all.",
         ),
         verbose: bool = typer.Option(False, "--verbose", "-v", help="Show user stories."),
+        project: str = typer.Option(
+            "", "--project", help="Registered project name to list tasks from."
+        ),
     ) -> None:
         """List tasks with Rich table display."""
-        _render_task_list(status=status, verbose=verbose)
+        _render_task_list(status=status, verbose=verbose, project=project)
 
     @task_app.command("board")
     def task_board_cmd(
@@ -338,16 +359,19 @@ def register_task_commands(task_app: typer.Typer) -> None:
             help="Filter by status: pending, complete, all.",
         ),
         verbose: bool = typer.Option(False, "--verbose", "-v", help="Show user stories."),
+        project: str = typer.Option(
+            "", "--project", help="Registered project name to list tasks from."
+        ),
     ) -> None:
         """Display the task board (alias for list)."""
-        _render_task_list(status=status, verbose=verbose)
+        _render_task_list(status=status, verbose=verbose, project=project)
 
 
-def _render_task_list(*, status: str, verbose: bool) -> None:
+def _render_task_list(*, status: str, verbose: bool, project: str = "") -> None:
     """Shared implementation for task list and task board commands."""
     from rich.table import Table
 
-    task_dir = _resolve_task_dir()
+    task_dir = _resolve_task_dir_for_project(project) if project else _resolve_task_dir()
     index_path = task_dir / "tasks-index.md"
 
     if not index_path.exists():

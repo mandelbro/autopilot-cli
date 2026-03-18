@@ -261,3 +261,120 @@ def project_archive(
 
     registry.archive(name)
     notification("success", f"Project '{name}' archived.")
+
+
+@project_app.command("unregister")
+def project_unregister(
+    name: str = typer.Argument(..., help="Project name to unregister."),
+) -> None:
+    """Remove a project from the registry (does not delete files)."""
+    registry = ProjectRegistry()
+    try:
+        registry.unregister(name)
+    except KeyError:
+        notification("error", f"Project '{name}' not found in registry.")
+        raise typer.Exit(code=1) from None
+    notification("success", f"Unregistered project '{name}'.")
+
+
+@project_app.command("register")
+def project_register(
+    path: str = typer.Option(
+        ..., "--path", "-p", help="Path to an external project with tasks/ directory."
+    ),
+    name: str = typer.Option(
+        "", "--name", "-n", help="Custom project name (defaults to dir name)."
+    ),
+) -> None:
+    """Register an external project that has a tasks/ directory."""
+    from autopilot.core.discover_projects import discover_task_project
+
+    project_path = Path(path).resolve()
+    if not project_path.is_dir():
+        notification("error", f"Path does not exist: {project_path}")
+        raise typer.Exit(code=1)
+
+    result = discover_task_project(project_path, name=name if name else "")
+    if result is None:
+        notification("error", f"No tasks/tasks-index.md found at {project_path}")
+        raise typer.Exit(code=1)
+
+    registry = ProjectRegistry()
+    try:
+        project = registry.register(
+            result.name,
+            result.path,
+            "external",
+            external=True,
+            task_dir=result.task_dir,
+        )
+    except ValueError as exc:
+        notification("error", str(exc))
+        raise typer.Exit(code=1) from exc
+
+    notification("success", f"Registered external project '{project.name}'")
+    console.print(f"  [bold]Path:[/bold] {project.path}")
+    console.print(f"  [bold]Tasks:[/bold] {result.total_tasks} ({result.pending} pending)")
+    console.print(
+        f"  [bold]Points:[/bold] {result.total_points} ({result.points_complete} complete)"
+    )
+    if result.description:
+        console.print(f"  [bold]Description:[/bold] {result.description}")
+
+
+@project_app.command("discover")
+def project_discover(
+    path: str = typer.Option(
+        ".", "--path", "-p", help="Workspace directory to scan for task projects."
+    ),
+    register: bool = typer.Option(
+        False, "--register", "-r", help="Auto-register discovered projects."
+    ),
+    max_depth: int = typer.Option(1, "--depth", "-d", help="Max directory depth to scan (1-5)."),
+) -> None:
+    """Scan a directory for projects with Task Workflow System files."""
+    from autopilot.core.discover_projects import scan_for_task_projects
+
+    if max_depth < 1 or max_depth > 5:
+        notification("error", "Depth must be between 1 and 5.")
+        raise typer.Exit(code=1)
+
+    search_path = Path(path).resolve()
+    results = scan_for_task_projects(search_path, max_depth=max_depth)
+
+    if not results:
+        notification("info", f"No task projects found under {search_path}")
+        return
+
+    table = Table(title=f"Discovered Task Projects ({len(results)})", width=90)
+    table.add_column("Name", style="bold")
+    table.add_column("Tasks", justify="right")
+    table.add_column("Pending", justify="right")
+    table.add_column("Points", justify="right")
+    table.add_column("Path", style="dim")
+
+    for r in results:
+        table.add_row(r.name, str(r.total_tasks), str(r.pending), str(r.total_points), r.path)
+
+    console.print(table)
+
+    if register:
+        registry = ProjectRegistry()
+        registered_count = 0
+        for r in results:
+            existing = registry.find_by_name(r.name)
+            if existing is not None:
+                console.print(f"  [dim]Skipping '{r.name}' (already registered)[/dim]")
+                continue
+            try:
+                registry.register(
+                    r.name,
+                    r.path,
+                    "external",
+                    external=True,
+                    task_dir=r.task_dir,
+                )
+                registered_count += 1
+            except ValueError as exc:
+                console.print(f"  [dim]Skipping '{r.name}': {exc}[/dim]")
+        notification("success", f"Registered {registered_count} new project(s).")
