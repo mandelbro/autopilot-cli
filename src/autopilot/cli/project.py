@@ -263,6 +263,20 @@ def project_archive(
     notification("success", f"Project '{name}' archived.")
 
 
+@project_app.command("unregister")
+def project_unregister(
+    name: str = typer.Argument(..., help="Project name to unregister."),
+) -> None:
+    """Remove a project from the registry (does not delete files)."""
+    registry = ProjectRegistry()
+    try:
+        registry.unregister(name)
+    except KeyError:
+        notification("error", f"Project '{name}' not found in registry.")
+        raise typer.Exit(code=1) from None
+    notification("success", f"Unregistered project '{name}'.")
+
+
 @project_app.command("register")
 def project_register(
     path: str = typer.Option(
