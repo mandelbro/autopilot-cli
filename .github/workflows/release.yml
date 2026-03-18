@@ -18,12 +18,15 @@ jobs:
   release-please:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    env:
+      # Opt into Node 24 until release-please-action ships a native node24 build
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      # googleapis/release-please-action@v4
-      - uses: googleapis/release-please-action@c3fc4de07084f75a2b61a5b933069bda6edf3d5c
+      # googleapis/release-please-action@v4.4.0 (still node20; forced to node24 via env)
+      - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38
         id: release
         with:
           config-file: release-please-config.json
@@ -39,14 +42,14 @@ jobs:
     permissions:
       id-token: write
     steps:
-      # actions/checkout@v4
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # actions/checkout@v6.0.2 (node24)
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}
 
-      # astral-sh/setup-uv@v4
+      # astral-sh/setup-uv@v7.6.0 (node24)
       - name: Install uv
-        uses: astral-sh/setup-uv@e4db8464a088ece1b920f60402e813ea4de65b8f
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
 
       - name: Set up Python
         run: uv python install 3.12
@@ -54,6 +57,6 @@ jobs:
       - name: Build package
         run: uv build
 
-      # pypa/gh-action-pypi-publish@v1.13.0
+      # pypa/gh-action-pypi-publish@v1.13.0 (composite — no node concern)
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
