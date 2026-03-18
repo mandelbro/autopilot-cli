@@ -59,6 +59,8 @@ class RegisteredProject:
     last_active: str = ""
     archived: bool = False
     repository_url: str = ""
+    external: bool = False
+    task_dir: str = ""
 
 
 @dataclass
@@ -98,7 +100,14 @@ class ProjectRegistry:
         return [self._dict_to_project(p) for p in raw]
 
     def register(
-        self, name: str, path: str, project_type: str, *, repository_url: str = ""
+        self,
+        name: str,
+        path: str,
+        project_type: str,
+        *,
+        repository_url: str = "",
+        external: bool = False,
+        task_dir: str = "",
     ) -> RegisteredProject:
         """Register a new project. Raises ValueError on duplicate name."""
         self._validate_repository_url(repository_url)
@@ -110,7 +119,12 @@ class ProjectRegistry:
                     raise ValueError(msg)
 
             project = RegisteredProject(
-                name=name, path=path, type=project_type, repository_url=repository_url
+                name=name,
+                path=path,
+                type=project_type,
+                repository_url=repository_url,
+                external=external,
+                task_dir=task_dir,
             )
             raw.append(self._project_to_dict(project))
             self._write_raw(raw)
@@ -197,12 +211,20 @@ class ProjectRegistry:
         for p in self._read_raw():
             name = p.get("name", "<unknown>")
             path = p.get("path", "")
+            is_external = bool(p.get("external", False))
+            task_dir = p.get("task_dir", "")
             if not path:
                 issues.append(RegistryIssue(name, "missing path"))
                 continue
             path_obj = Path(path)
             if not path_obj.exists():
                 issues.append(RegistryIssue(name, f"path does not exist: {path}"))
+            elif is_external:
+                # External projects: validate task_dir exists instead of .autopilot/
+                if task_dir and not Path(task_dir).is_dir():
+                    issues.append(
+                        RegistryIssue(name, f"task directory does not exist: {task_dir}")
+                    )
             elif not (path_obj / ".autopilot").is_dir():
                 issues.append(RegistryIssue(name, f"no .autopilot/ directory at {path}"))
         return issues
@@ -236,6 +258,8 @@ class ProjectRegistry:
             last_active=d.get("last_active", ""),
             archived=bool(d.get("archived", False)),
             repository_url=d.get("repository_url", ""),
+            external=bool(d.get("external", False)),
+            task_dir=d.get("task_dir", ""),
         )
 
     @staticmethod
@@ -248,6 +272,8 @@ class ProjectRegistry:
             "last_active": p.last_active,
             "archived": p.archived,
             "repository_url": p.repository_url,
+            "external": p.external,
+            "task_dir": p.task_dir,
         }
 
 
