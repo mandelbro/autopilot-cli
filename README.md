@@ -83,7 +83,19 @@ This project uses [just](https://github.com/casey/just) as a task runner and [uv
 ```bash
 git clone https://github.com/mandelbro/autopilot-cli.git
 cd autopilot-cli
-uv sync --extra dev
+just init
+```
+
+### Running locally
+
+```bash
+# Run the CLI via just (pass args after --)
+just run -- --help
+just run -- init --name my-project
+just run -- hive spawn tasks/tasks-1.md --task-ids 001-008 --dry-run
+
+# Or directly with uv
+uv run autopilot --help
 ```
 
 ### Commands
