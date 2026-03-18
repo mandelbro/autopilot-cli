@@ -200,6 +200,20 @@ class TestScanForTaskProjects:
         names = {r.name for r in results}
         assert "project-d" not in names
 
+    def test_skips_symlinks(self, workspace: Path) -> None:
+        """Symlinked directories should be skipped to prevent infinite loops."""
+        import os
+
+        # Create a symlink that points back to the workspace (cycle)
+        symlink_path = workspace / "loop-link"
+        os.symlink(str(workspace), str(symlink_path))
+
+        results = scan_for_task_projects(workspace, max_depth=2)
+        names = {r.name for r in results}
+        # Should still find the real projects but not loop
+        assert "project-a" in names
+        assert "project-c" in names
+
 
 # ---------------------------------------------------------------------------
 # DiscoverResult

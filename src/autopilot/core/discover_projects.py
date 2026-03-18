@@ -95,7 +95,7 @@ def scan_for_task_projects(
         if not current.is_dir():
             return
         for child in sorted(current.iterdir()):
-            if not child.is_dir() or child.name.startswith("."):
+            if not child.is_dir() or child.name.startswith(".") or child.is_symlink():
                 continue
             result = discover_task_project(child)
             if result is not None:

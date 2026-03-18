@@ -118,6 +118,12 @@ class TestProjectDiscover:
         assert result.exit_code == 0
         assert "no task projects" in result.output.lower()
 
+    def test_discover_rejects_invalid_depth(self, tmp_path: Path) -> None:
+        result = runner.invoke(
+            app, ["project", "discover", "--path", str(tmp_path), "--depth", "10"]
+        )
+        assert result.exit_code != 0
+
     def test_discover_and_register(self, tmp_path: Path) -> None:
         _make_task_project(tmp_path, "proj-x")
         global_dir = tmp_path / "global"

@@ -327,11 +327,15 @@ def project_discover(
         False, "--register", "-r", help="Auto-register discovered projects."
     ),
     max_depth: int = typer.Option(
-        1, "--depth", "-d", help="Max directory depth to scan."
+        1, "--depth", "-d", help="Max directory depth to scan (1-5)."
     ),
 ) -> None:
     """Scan a directory for projects with Task Workflow System files."""
     from autopilot.core.discover_projects import scan_for_task_projects
+
+    if max_depth < 1 or max_depth > 5:
+        notification("error", "Depth must be between 1 and 5.")
+        raise typer.Exit(code=1)
 
     search_path = Path(path).resolve()
     results = scan_for_task_projects(search_path, max_depth=max_depth)
@@ -360,12 +364,15 @@ def project_discover(
             if existing is not None:
                 console.print(f"  [dim]Skipping '{r.name}' (already registered)[/dim]")
                 continue
-            registry.register(
-                r.name,
-                r.path,
-                "external",
-                external=True,
-                task_dir=r.task_dir,
-            )
-            registered_count += 1
+            try:
+                registry.register(
+                    r.name,
+                    r.path,
+                    "external",
+                    external=True,
+                    task_dir=r.task_dir,
+                )
+                registered_count += 1
+            except ValueError as exc:
+                console.print(f"  [dim]Skipping '{r.name}': {exc}[/dim]")
         notification("success", f"Registered {registered_count} new project(s).")
