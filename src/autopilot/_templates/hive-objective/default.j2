@@ -1,0 +1,72 @@
+Review Task IDs: {{ task_ids | join(', ') }} from @{{ task_file }}, group any related tasks into batches, then implement the work following the Task Workflow System guidelines.
+
+For each batch, once it is implemented and all code quality checks are passing ({{ quality_command }}):
+{% if code_review_enabled %}
+- Create a PR with a description of each task in the batch
+- Request a code review from Claude Code (@.github/workflows/claude-code-review.yml)
+- Make sure all CI checks pass
+- Make any changes requested in code review
+- Loop until Claude approves the PR (max {{ max_review_rounds }} rounds)
+{% if auto_merge %}
+- Merge the PR
+{% endif %}
+- Move on to the next batch
+{% else %}
+- Create a PR with a description of each task in the batch
+- Move on to the next batch
+{% endif %}
+{% if duplication_check %}
+
+## Duplication Detection
+After implementing each batch and before creating the PR, scan the affected files for:
+- Duplicate function/method implementations across modules
+- Copy-pasted code blocks that should be extracted to shared utilities
+- Similar patterns that appear 3+ times (Rule of Three) -- consolidate into shared abstractions
+- Redundant imports or re-exports
+{% endif %}
+{% if cleanup_pass %}
+
+## Cleanup Pass
+Before creating the PR, run a cleanup pass on all modified files:
+- Remove dead code, unused imports, and unreachable branches
+- Apply consistent formatting ({{ format_command }})
+- Remove TODO/FIXME comments that have been addressed
+- Ensure docstrings are present on public APIs
+{% endif %}
+{% if security_scan %}
+
+## Security Analysis
+Before creating the PR, verify:
+- No secrets, API keys, or credentials in source files
+- No hardcoded passwords or tokens
+- Input validation at system boundaries
+- File path sanitization where applicable
+- No use of eval() or equivalent unsafe patterns
+{% endif %}
+{% if coverage_check %}
+
+## Test Coverage
+Ensure each batch:
+- Has test coverage for new/modified public APIs
+- All existing tests pass after changes
+- Test files follow project naming conventions
+{% endif %}
+{% if file_size_check %}
+
+## File Size Optimization
+After implementation, check that:
+- No file exceeds 500 lines without architectural justification
+- Files approaching 400 lines are evaluated for splitting
+- Each file has a single clear responsibility
+{% endif %}
+
+## Task Status Updates
+After each batch is complete and merged:
+- Mark completed tasks as `Complete: [x]` in the task file
+- Update the task index file with new completion counts
+{% if sprint_record %}
+- Update the sprint record at {{ sprint_record }}
+{% endif %}
+
+## Quality Gates
+{{ quality_gates }}

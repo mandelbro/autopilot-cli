@@ -83,6 +83,7 @@ This project uses [just](https://github.com/casey/just) as a task runner and [uv
 ```bash
 git clone https://github.com/mandelbro/autopilot-cli.git
 cd autopilot-cli
+asdf install # installs python, uv, and just
 just init
 ```
 
