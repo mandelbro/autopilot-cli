@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path  # noqa: TC003
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -117,9 +117,7 @@ class TestTaskListWithProjectFlag:
         global_dir, _project_path = _setup_external_project(tmp_path)
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["task", "list", "--project", "ext-project"]
-            )
+            result = runner.invoke(app, ["task", "list", "--project", "ext-project"])
 
         assert result.exit_code == 0
         assert "Setup foundation" in result.output
@@ -131,9 +129,7 @@ class TestTaskListWithProjectFlag:
         global_dir.mkdir()
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["task", "list", "--project", "nonexistent"]
-            )
+            result = runner.invoke(app, ["task", "list", "--project", "nonexistent"])
 
         assert result.exit_code != 0
 
@@ -141,9 +137,7 @@ class TestTaskListWithProjectFlag:
         global_dir, _project_path = _setup_external_project(tmp_path)
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["task", "board", "--project", "ext-project"]
-            )
+            result = runner.invoke(app, ["task", "board", "--project", "ext-project"])
 
         assert result.exit_code == 0
         assert "Setup foundation" in result.output
@@ -154,9 +148,7 @@ class TestProjectUnregister:
         global_dir, _project_path = _setup_external_project(tmp_path)
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["project", "unregister", "ext-project"]
-            )
+            result = runner.invoke(app, ["project", "unregister", "ext-project"])
 
         assert result.exit_code == 0
         registry = ProjectRegistry(global_dir=global_dir)
@@ -167,8 +159,6 @@ class TestProjectUnregister:
         global_dir.mkdir()
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["project", "unregister", "nonexistent"]
-            )
+            result = runner.invoke(app, ["project", "unregister", "nonexistent"])
 
         assert result.exit_code != 0

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path  # noqa: TC003
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -48,9 +48,7 @@ class TestProjectRegister:
         global_dir = tmp_path / "global"
 
         with patch("autopilot.core.project.get_global_dir", return_value=global_dir):
-            result = runner.invoke(
-                app, ["project", "register", "--path", str(project_path)]
-            )
+            result = runner.invoke(app, ["project", "register", "--path", str(project_path)])
 
         assert result.exit_code == 0
         assert "ext-project" in result.output
@@ -92,9 +90,7 @@ class TestProjectRegister:
     def test_register_no_tasks_dir(self, tmp_path: Path) -> None:
         empty = tmp_path / "empty"
         empty.mkdir()
-        result = runner.invoke(
-            app, ["project", "register", "--path", str(empty)]
-        )
+        result = runner.invoke(app, ["project", "register", "--path", str(empty)])
         assert result.exit_code != 0
 
 
@@ -104,17 +100,13 @@ class TestProjectDiscover:
         _make_task_project(tmp_path, "proj-b")
         (tmp_path / "not-a-project").mkdir()
 
-        result = runner.invoke(
-            app, ["project", "discover", "--path", str(tmp_path)]
-        )
+        result = runner.invoke(app, ["project", "discover", "--path", str(tmp_path)])
         assert result.exit_code == 0
         assert "proj-a" in result.output
         assert "proj-b" in result.output
 
     def test_discover_empty_workspace(self, tmp_path: Path) -> None:
-        result = runner.invoke(
-            app, ["project", "discover", "--path", str(tmp_path)]
-        )
+        result = runner.invoke(app, ["project", "discover", "--path", str(tmp_path)])
         assert result.exit_code == 0
         assert "no task projects" in result.output.lower()
 

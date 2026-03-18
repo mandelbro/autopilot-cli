@@ -282,7 +282,9 @@ def project_register(
     path: str = typer.Option(
         ..., "--path", "-p", help="Path to an external project with tasks/ directory."
     ),
-    name: str = typer.Option("", "--name", "-n", help="Custom project name (defaults to dir name)."),
+    name: str = typer.Option(
+        "", "--name", "-n", help="Custom project name (defaults to dir name)."
+    ),
 ) -> None:
     """Register an external project that has a tasks/ directory."""
     from autopilot.core.discover_projects import discover_task_project
@@ -313,7 +315,9 @@ def project_register(
     notification("success", f"Registered external project '{project.name}'")
     console.print(f"  [bold]Path:[/bold] {project.path}")
     console.print(f"  [bold]Tasks:[/bold] {result.total_tasks} ({result.pending} pending)")
-    console.print(f"  [bold]Points:[/bold] {result.total_points} ({result.points_complete} complete)")
+    console.print(
+        f"  [bold]Points:[/bold] {result.total_points} ({result.points_complete} complete)"
+    )
     if result.description:
         console.print(f"  [bold]Description:[/bold] {result.description}")
 
@@ -326,9 +330,7 @@ def project_discover(
     register: bool = typer.Option(
         False, "--register", "-r", help="Auto-register discovered projects."
     ),
-    max_depth: int = typer.Option(
-        1, "--depth", "-d", help="Max directory depth to scan (1-5)."
-    ),
+    max_depth: int = typer.Option(1, "--depth", "-d", help="Max directory depth to scan (1-5)."),
 ) -> None:
     """Scan a directory for projects with Task Workflow System files."""
     from autopilot.core.discover_projects import scan_for_task_projects
