@@ -1,4 +1,4 @@
-exclude: '^(\.claude-flow/plugins/node_modules/|\.claude/skills/skill-builder/\.claude-flow/)'
+exclude: '^(\.claude-flow/|\.swarm/|\.claude/skills/skill-builder/\.claude-flow/)'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.10

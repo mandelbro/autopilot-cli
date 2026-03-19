@@ -2,9 +2,10 @@ set dotenv-load := true
 
 default: format lint typecheck test
 
-# Install all dependencies
+# Install all dependencies and pre-commit hooks
 init:
     uv sync --extra dev
+    uv run pre-commit install
 
 # Run the autopilot CLI (pass args after --)
 run *ARGS:
