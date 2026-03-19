@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/mandelbro/autopilot-cli/compare/v1.1.1...v1.1.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* **cli:** Resolve external projects from registry in _resolve_project ([#57](https://github.com/mandelbro/autopilot-cli/issues/57)) ([0cc6ec8](https://github.com/mandelbro/autopilot-cli/commit/0cc6ec82dec5f6339c0d1af4f8a476d3320b2869))
+
 ## [1.1.1](https://github.com/mandelbro/autopilot-cli/compare/v1.1.0...v1.1.1) (2026-03-18)
 
 
