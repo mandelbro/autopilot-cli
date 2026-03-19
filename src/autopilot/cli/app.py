@@ -148,9 +148,7 @@ def _resolve_project(project: str = "") -> tuple[Path, str]:
         if entry is not None and entry.external:
             project_root = Path(entry.path)
             if not project_root.is_dir():
-                console.print(
-                    f"[error]External project path not found: {project_root}[/error]"
-                )
+                console.print(f"[error]External project path not found: {project_root}[/error]")
                 raise typer.Exit(code=1)
             ap_dir = project_root / ".autopilot"
             if not ap_dir.is_dir():
