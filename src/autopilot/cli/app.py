@@ -134,6 +134,8 @@ def _resolve_project(project: str = "") -> tuple[Path, str]:
 
     Raises typer.Exit(1) if no project can be resolved.
     """
+    from pathlib import Path
+
     from autopilot.cli.display import console
     from autopilot.core.project import ProjectRegistry
     from autopilot.utils.paths import ensure_dir_structure, find_autopilot_dir
@@ -141,12 +143,15 @@ def _resolve_project(project: str = "") -> tuple[Path, str]:
     # When a project name is given, check the global registry first so that
     # external projects (which have no local .autopilot/) are handled.
     if project:
-        from pathlib import Path as _Path
-
         registry = ProjectRegistry()
         entry = registry.find_by_name(project)
         if entry is not None and entry.external:
-            project_root = _Path(entry.path)
+            project_root = Path(entry.path)
+            if not project_root.is_dir():
+                console.print(
+                    f"[error]External project path not found: {project_root}[/error]"
+                )
+                raise typer.Exit(code=1)
             ap_dir = project_root / ".autopilot"
             if not ap_dir.is_dir():
                 ap_dir.mkdir(parents=True, exist_ok=True)
