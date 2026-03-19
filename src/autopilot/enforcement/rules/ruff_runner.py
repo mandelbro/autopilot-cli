@@ -107,7 +107,7 @@ def _parse_ruff_json(
         raw_location = entry.get("location", {})
         location = cast("dict[str, object]", raw_location) if isinstance(raw_location, dict) else {}
         line_val = location.get("row", 0)
-        line = int(line_val) if isinstance(line_val, (int, float)) else 0
+        line = int(line_val) if isinstance(line_val, int | float) else 0
 
         violations.append(
             Violation(

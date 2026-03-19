@@ -333,7 +333,7 @@ class DesktopAgentTool:
             self._project_dir = Path(str(settings["project_dir"]))
         if "preflight_patterns" in settings:
             raw = settings["preflight_patterns"]
-            if isinstance(raw, (list, tuple)):
+            if isinstance(raw, list | tuple):
                 converted = cast("list[Any]", list(raw))  # type: ignore[reportUnknownArgumentType]
                 self._preflight_patterns = tuple(str(item) for item in converted)
 
@@ -464,7 +464,7 @@ class DesktopAgentTool:
         log = logger.bind(tool=self.name, action="click", target=target)
         raw_retries = self._settings.get("click_max_retries", _CLICK_MAX_RETRIES)
         max_retries = (
-            int(raw_retries) if isinstance(raw_retries, (int, float, str)) else _CLICK_MAX_RETRIES
+            int(raw_retries) if isinstance(raw_retries, int | float | str) else _CLICK_MAX_RETRIES
         )
 
         for attempt in range(max_retries):

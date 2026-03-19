@@ -127,10 +127,34 @@ def init(
 def _resolve_project(project: str = "") -> tuple[Path, str]:
     """Resolve autopilot dir and project name. Returns (ap_dir, project_name).
 
-    Raises typer.Exit(1) if no .autopilot directory is found.
+    For external projects (registered with ``external: true``), the project's
+    registered path is used and a local ``.autopilot/`` directory is created
+    on-demand under it. For normal projects the nearest ``.autopilot/``
+    directory found by walking up from CWD is returned.
+
+    Raises typer.Exit(1) if no project can be resolved.
     """
+    from pathlib import Path
+
     from autopilot.cli.display import console
-    from autopilot.utils.paths import find_autopilot_dir
+    from autopilot.core.project import ProjectRegistry
+    from autopilot.utils.paths import ensure_dir_structure, find_autopilot_dir
+
+    # When a project name is given, check the global registry first so that
+    # external projects (which have no local .autopilot/) are handled.
+    if project:
+        registry = ProjectRegistry()
+        entry = registry.find_by_name(project)
+        if entry is not None and entry.external:
+            project_root = Path(entry.path)
+            if not project_root.is_dir():
+                console.print(f"[error]External project path not found: {project_root}[/error]")
+                raise typer.Exit(code=1)
+            ap_dir = project_root / ".autopilot"
+            if not ap_dir.is_dir():
+                ap_dir.mkdir(parents=True, exist_ok=True)
+                ensure_dir_structure(ap_dir)
+            return ap_dir, entry.name
 
     ap_dir = find_autopilot_dir()
     if ap_dir is None:
